@@ -1,1 +1,0 @@
-ALTER TABLE team_members RENAME COLUMN role TO team_role;

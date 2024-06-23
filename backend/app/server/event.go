@@ -78,8 +78,6 @@ func (server *Server) PutEvent(ctx *gin.Context) {
 	userId := session.Get("userId")
 	if userId != nil {
 		var event database.DBEvent
-		
-		// taking submitted data and putting it into an object
 		err := ctx.ShouldBindJSON(&event)
 		if err != nil {
 			logger.Error("UpdateEvent Request ShouldBindJSON error: %v", err)

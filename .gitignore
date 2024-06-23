@@ -7,10 +7,5 @@
 # Config files...
 config.toml
 
-# extra files to ignore
-codejam.io.exe
-brainstorm.txt
-gradientchange.svelte
-
 # docker related files
 docker-compose.override.yaml

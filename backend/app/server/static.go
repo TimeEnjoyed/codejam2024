@@ -2,6 +2,7 @@ package server
 
 import (
 	"embed"
+	_ "embed"
 	"github.com/gin-gonic/gin"
 	"mime"
 	"net/http"

@@ -2,19 +2,15 @@
 
     import {getContext, onMount} from "svelte";
 
-    // form field name
     export let name : string = '';
 
     export let error : string = '';
-
-    // form field label
-    export let label: string = '';
 
     export function setError(err: string) {
         error = err;
     }
 
-    let formFunctions: any = getContext("formFunctions");
+    let formFunctions = getContext("formFunctions");
 
     onMount(() => {
         formFunctions.register(name, setError);
@@ -24,7 +20,7 @@
 
 
 <div class="flex flex-col gap-2">
-    <span class="fieldLabel">{label}</span>
+    <span class="fieldLabel">{name}</span>
     <slot/>
     <span class="fieldError">{error}</span>
 </div>

@@ -44,4 +44,3 @@ func GetUser(userId pgtype.UUID) DBUser {
 	}
 	return user
 }
-
