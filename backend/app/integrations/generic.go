@@ -13,7 +13,7 @@ var logger = logging.NewLogger(logging.Options{Name: "Integrations", Level: logg
 type IntegrationUser struct {
 	IntegrationName string
 	UserId          string
-	DisplayName     string
+	ServiceUserName string
 	AvatarUrl       string
 }
 
@@ -35,11 +35,15 @@ func getDiscordUser(accessToken string) *IntegrationUser {
 		logger.Error("User not found for token: %s", accessToken)
 		return nil
 	} else {
+		var avatar = ""
+		if user["avatar"] != nil {
+			avatar = user["avatar"].(string)
+		}
 		return &IntegrationUser{
 			IntegrationName: "discord",
 			UserId:          user["id"].(string),
-			DisplayName:     user["global_name"].(string),
-			AvatarUrl:       user["avatar"].(string),
+			ServiceUserName: user["global_name"].(string),
+			AvatarUrl:       avatar,
 		}
 	}
 }

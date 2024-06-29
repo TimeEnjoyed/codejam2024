@@ -1,13 +1,13 @@
 <script lang="ts">
 
-import Page from "../components/Page.svelte";
+import Page from "../../components/Page.svelte";
 import {Button, Card} from "flowbite-svelte";
 import {FontAwesomeIcon} from "@fortawesome/svelte-fontawesome";
 import {faPenToSquare} from "@fortawesome/free-solid-svg-icons";
-import CodeJamEvent from "../models/event";
+import CodeJamEvent from "../../models/event";
 import {onMount} from "svelte";
-import {getEvents} from "../services/services";
-import {eventStatusStore} from "../stores/stores";
+import {getEvents} from "../../services/services";
+import {eventStatusStore} from "../../stores/stores";
 
 
 let events : Array<CodeJamEvent> = new Array<CodeJamEvent>();

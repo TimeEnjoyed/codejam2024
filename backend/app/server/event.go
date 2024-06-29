@@ -104,7 +104,12 @@ func (server *Server) PutEvent(ctx *gin.Context) {
 		}
 
 		// Check Authorization
-		user := database.GetUser(convert.StringToUUID(userId.(string)))
+		user, err := database.GetUser(convert.StringToUUID(userId.(string)))
+		if err != nil {
+			ctx.Status(http.StatusInternalServerError)
+			return
+		}
+
 		if user.Role != database.Admin {
 			logger.Error("PutEvent unauthorized user: %v", userId)
 			ctx.Status(http.StatusUnauthorized)

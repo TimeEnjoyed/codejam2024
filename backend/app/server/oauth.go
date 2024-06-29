@@ -57,7 +57,7 @@ func (server *Server) GetOAuthCallback(ctx *gin.Context) {
 	integrationName := strings.ToLower(server.Config.OAuth.Provider)
 	providerUser := integrations.GetUser(integrationName, token.AccessToken)
 	if providerUser != nil {
-		dbUser := database.CreateUser(integrationName, providerUser.UserId, providerUser.DisplayName, providerUser.AvatarUrl)
+		dbUser := database.CreateUser(integrationName, providerUser.UserId, providerUser.ServiceUserName, providerUser.AvatarUrl)
 		session := sessions.Default(ctx)
 		session.Set("userId", convert.UUIDToString(dbUser.Id))
 		session.Set("displayName", dbUser.DisplayName)

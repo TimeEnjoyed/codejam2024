@@ -55,7 +55,11 @@ $: activeUrl = '/#' + $location;
                         <NavLi href="/#/">Home</NavLi>
                         {#if activeUser.user !== null}
                             {#if activeUser.user?.Role === "ADMIN" }
-                                <NavLi href="/#/admin/events">Manage Events</NavLi>
+                                <NavLi>Admin</NavLi>
+                                <Dropdown class="w-44" placement="bottom" trigger="hover">
+                                    <DropdownItem href="/#/admin/events">Events</DropdownItem>
+                                    <DropdownItem href="/#/admin/users">Users</DropdownItem>
+                                </Dropdown>
                             {/if}
                             {#if $activeEventStore && $activeEventStore.AllowSignups}
                                 <NavLi href="/#/team">Sign-Up</NavLi>

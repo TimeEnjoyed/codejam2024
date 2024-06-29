@@ -21,7 +21,12 @@ func (server *Server) GetUser(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
 	if userId != nil {
-		dbUser := database.GetUser(convert.StringToUUID(userId.(string)))
+		dbUser, err := database.GetUser(convert.StringToUUID(userId.(string)))
+		if err != nil {
+			logger.Error("GetUser: %v, %v", userId, err)
+			ctx.Status(http.StatusInternalServerError)
+			return
+		}
 		ctx.JSON(http.StatusOK, dbUser)
 		return
 	}
@@ -40,7 +45,6 @@ func (server *Server) PutUser(ctx *gin.Context) {
 		}
 
 		response := models.NewFormResponse()
-		validateUser(&user, &response)
 
 		// Perform validation
 		validateUser(&user, &response)
@@ -91,4 +95,5 @@ func (server *Server) SetupUserRoutes() {
 		group.PUT("/", server.PutUser)
 		group.GET("/logout", server.Logout)
 	}
+
 }
