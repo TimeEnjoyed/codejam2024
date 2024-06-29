@@ -81,3 +81,21 @@ func GetRows[T any](query string, args ...any) ([]T, error) {
 
 	return result, nil
 }
+
+func Execute(query string, args ...any) error {
+	conn, err := Pool.Acquire(context.Background())
+	if err != nil {
+		logger.Error("acquire conn error %v", err)
+		return err
+	}
+	defer conn.Release()
+
+	_, err = conn.Query(context.Background(),
+		query,
+		args...)
+	if err != nil {
+		logger.Error("Query Execute Error: %v", err)
+	}
+
+	return nil
+}
