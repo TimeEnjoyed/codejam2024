@@ -12,7 +12,7 @@ type DBUser struct {
 	ServiceUserName string           `db:"service_user_name"`
 	Role            string           `db:"role"`
 	DisplayName     string           `db:"display_name"`
-	AvatarUrl       string           `db:"avatar_url"`
+	AvatarUrl       *string          `db:"avatar_url"`
 	AccountStatus   string           `db:"account_status"`
 	LockDisplayName bool             `db:"lock_display_name"`
 	CreatedOn       pgtype.Timestamp `db:"created_on" json:"-"`
