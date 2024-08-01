@@ -137,14 +137,29 @@ export async function getTeamByInvite(inviteCode: string) {
 }
 
 
-// any one who has the link joinTeam connects to can join the team.
+// any one who has a link joinTeam() works on, can join the team.
 // make sure invite_code matches 
-export async function joinTeam(team: CodeJamTeam, userId: string, invite_code: string) {
+
+export async function joinTeam(teamId: string, inviteCode: string) {
     // making a post to team_members
-    return await fetch(baseApiUrl + "/team/" + invite_code,
+    return await fetch(baseApiUrl + "/team/" + inviteCode,
         {
             method: "POST",
-            body: JSON.stringify({ team, userId, invite_code })
+            body: JSON.stringify({ teamId, inviteCode })
+        }
+    )
+}
+
+
+
+// write a joinPublicTeam function that accepts team Id.  
+// server: check if team is public.
+
+export async function joinPublicTeam(teamId: string) {
+    return await fetch(baseApiUrl + "/team/join",
+        {
+            method: "POST",
+            body: JSON.stringify({ teamId })
         }
     )
 }

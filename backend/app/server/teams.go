@@ -35,6 +35,19 @@ type GetTeamResponse struct {
 	Members *[]database.DBTeamMemberInfo // array(slice) of a struct
 }
 
+type InvitePayload struct {
+	TeamId 		string	`json:"teamId"`
+	InviteCode	string 	`json:"inviteCode"`
+}
+
+type JoinPayload struct {
+	TeamId		string 	`json:"teamId"`
+}
+
+type Response struct {
+	teamData	GetTeamResponse	
+}
+
 func MD5HashCode(teamName string) (string, error) {
 	randNum, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
 	if err != nil {
@@ -94,6 +107,15 @@ func (server *Server) GetUserTeams(ctx *gin.Context) {
 	// assign each team to teamResponse type..
 
 }
+func (server *Server) sendTeamInfo(teamResponse GetTeamResponse) {
+	router := gin.Default()
+	router.POST("/teams/browse", func(ctx *gin.Context) {
+		response := Response {
+			teamData: teamResponse,
+		}
+		ctx.JSON(http.StatusOK, response)
+	})
+}
 
 // stepp 4: GET team info
 // purpose is to construct the DBTeamMemberInfo
@@ -131,8 +153,11 @@ func (server *Server) GetTeamInfo(ctx *gin.Context) {
 	teamResponse.Event = &event
 	teamResponse.Members = members
 
-	ctx.JSON(http.StatusOK, teamResponse)
+	server.sendTeamInfo(teamResponse)
+	//ctx.JSON(http.StatusOK, teamResponse)
 }
+
+
 
 func (server *Server) GetTeamInfoByInviteCode(ctx *gin.Context) {
 	inviteCode := ctx.Param("invitecode")
@@ -225,6 +250,7 @@ func (server *Server) CreateTeam(ctx *gin.Context) {
 		ctx.Status(http.StatusBadRequest)
 		return
 	}
+	fmt.Println(convert.StringToUUID(strUserId), teamUUID,)
 
 	// PART 2/2 DONE
 	// construct TeamMember
@@ -246,9 +272,10 @@ func (server *Server) CreateTeam(ctx *gin.Context) {
 func (server *Server) UpdateTeam(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
+	fmt.Println(ctx.Request.Body)
 	if userId != nil {
 		var team database.DBTeam
-		err := ctx.ShouldBindJSON(&team)
+		err := ctx.ShouldBindJSON(&team)  //"message incoming data to this struct"
 		if err != nil {
 			logger.Error("UpdateEvent Request ShouldBindJSON error: %v", err)
 			ctx.Status(http.StatusBadRequest)
@@ -266,10 +293,64 @@ func (server *Server) UpdateTeam(ctx *gin.Context) {
 	}
 }
 
+func (server *Server) UpdateTeamMembers(ctx *gin.Context) {
+	session := sessions.Default(ctx)
+	userId := session.Get("userId")
+	if userId != nil {
+		ctx.Status(http.StatusBadRequest)
+		return
+	}
+
+	//database.AddTeamMember(convert.StringToUUID(userId.(string), ))
+}
+
+func (server *Server) MemberJoin(ctx *gin.Context) {
+
+	session := sessions.Default(ctx)
+	userId := session.Get("userId")
+
+	fmt.Println(userId)
+	var teamId JoinPayload
+
+	if err := ctx.ShouldBindJSON(&teamId); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	fmt.Println(teamId) // this prints {cc457e3e-210a-4d5d-83d8-0899426dfc93}
+
+	// call getteaminfo
+	//verify team is public
+	//var team
+	//var isPublic bool = team.ispublic
+
+}
+
+func (server *Server) MemberInvite(ctx *gin.Context) {
+	session := sessions.Default(ctx)
+	userId:= session.Get("userId")
+
+	var payload InvitePayload
+	// bind the message context to the structure, and do an error check
+	if err := ctx.ShouldBindJSON(&payload); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	inviteCode := payload.InviteCode
+	teamId := payload.TeamId
+
+	fmt.Println("===316", inviteCode, teamId, userId)
+
+	//var team database.DBTeamMemberInfo
+	// to add a member, i need to add a user to team_member table
+}
+
+
 func (server *Server) SetupTeamRoutes() {
 	group := server.Gin.Group("/team")
 	{
 		group.POST("/", server.CreateTeam)
+		group.POST("/edit/:teamid", server.UpdateTeamMembers) // for admin to remove people
+		group.POST("/join", server.MemberJoin)
+		group.POST("/:invitecode", server.MemberInvite)
 		//group.GET("/", server.GetAllTeams)
 		group.GET("/:id", server.GetTeamInfo)
 		group.GET("/invite/:invitecode", server.GetTeamInfoByInviteCode)
