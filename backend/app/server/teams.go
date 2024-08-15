@@ -44,10 +44,6 @@ type JoinPayload struct {
 	TeamId		string 	`json:"teamId"`
 }
 
-type Response struct {
-	teamData	GetTeamResponse	
-}
-
 func MD5HashCode(teamName string) (string, error) {
 	randNum, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
 	if err != nil {
@@ -72,6 +68,7 @@ func (server *Server) signupsAllowed(eventId string) bool {
 }
 
 func (server *Server) GetAllTeams(ctx *gin.Context) {
+	// what if there's no session => no user id
 	teams, err := database.GetTeams()
 	if err == nil {
 		ctx.JSON(http.StatusOK, teams)
@@ -84,43 +81,23 @@ func (server *Server) GetAllTeams(ctx *gin.Context) {
 func (server *Server) GetUserTeams(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
-	strUserId := userId.(string)
-
 	if userId == nil {
 		ctx.Status(http.StatusNotFound)
 		return
 	}
-	// var teamResponse GetTeamResponse
-	// var teamsResponse []GetTeamResponse
+	strUserId := userId.(string)
 
 	teams, err := database.GetUserTeams(convert.StringToUUID(strUserId))
 	if err != nil {
 		ctx.Status(http.StatusInternalServerError)
 		return
 	}
-
-	//1. join databse to return members
 	ctx.JSON(http.StatusOK, teams)
-
-	// add all the GetTeamResponse to []GetTeamResponse
-	// loop through teams, get team id
-	// assign each team to teamResponse type..
-
-}
-func (server *Server) sendTeamInfo(teamResponse GetTeamResponse) {
-	router := gin.Default()
-	router.POST("/teams/browse", func(ctx *gin.Context) {
-		response := Response {
-			teamData: teamResponse,
-		}
-		ctx.JSON(http.StatusOK, response)
-	})
 }
 
 // stepp 4: GET team info
 // purpose is to construct the DBTeamMemberInfo
-func (server *Server) GetTeamInfo(ctx *gin.Context) {
-	id := convert.StringToUUID(ctx.Param("id"))
+func (server *Server) GetTeamInfo(id pgtype.UUID) (*GetTeamResponse, error) {
 
 	var teamResponse GetTeamResponse
 	var team database.DBTeam
@@ -130,34 +107,39 @@ func (server *Server) GetTeamInfo(ctx *gin.Context) {
 	team, err := database.GetTeam(id)
 	if err != nil {
 		logger.Error("failed to get team: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get team: %v", err)})
-		return
+		return nil, err
 	}
 
 	event, err = database.GetEvent(team.EventId)
 	if err != nil {
 		logger.Error("failed to get event: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get event: %v", err)})
-		return
+		return nil, err
 	}
 
 	members, err = database.GetMembersByTeamId(team.Id)
 	if err != nil {
 		logger.Error("failed to get event: %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get members: %v", err)})
-		return
+		return nil, err
 	}
 
 	// attach all 3 structures to GetTeamResponse --> nested structs turn into nested JSON (with ctx.JSON)
 	teamResponse.Team = &team
 	teamResponse.Event = &event
 	teamResponse.Members = members
-
-	server.sendTeamInfo(teamResponse)
-	//ctx.JSON(http.StatusOK, teamResponse)
+	
+	return &teamResponse, nil
 }
 
+func (server *Server) sendTeamInfo(ctx *gin.Context) {
+	id := convert.StringToUUID(ctx.Param("id"))
 
+	teamResponse, err := server.GetTeamInfo(id)
+	if err != nil {
+		ctx.Status(http.StatusBadRequest)
+	}
+
+	ctx.JSON(http.StatusOK, teamResponse)
+}
 
 func (server *Server) GetTeamInfoByInviteCode(ctx *gin.Context) {
 	inviteCode := ctx.Param("invitecode")
@@ -205,7 +187,10 @@ func (server *Server) CreateTeam(ctx *gin.Context) {
 	// Step 4: Post Team Data API (TWO PARTS 1) create team 2) add team members)
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
-
+    if userId == nil {
+		ctx.Status(http.StatusBadRequest)
+		return
+	}
 	strUserId := userId.(string)
 
 	var team database.DBTeam
@@ -300,28 +285,43 @@ func (server *Server) UpdateTeamMembers(ctx *gin.Context) {
 		ctx.Status(http.StatusBadRequest)
 		return
 	}
-
 	//database.AddTeamMember(convert.StringToUUID(userId.(string), ))
 }
 
 func (server *Server) MemberJoin(ctx *gin.Context) {
-
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
-
 	fmt.Println(userId)
+
+	if userId == nil {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
+	strUserId := userId.(string)
+	uuidUserId := convert.StringToUUID(strUserId)
+
+
 	var teamId JoinPayload
 
 	if err := ctx.ShouldBindJSON(&teamId); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 	fmt.Println(teamId) // this prints {cc457e3e-210a-4d5d-83d8-0899426dfc93}
+	uuidTeamId := convert.StringToUUID(teamId.TeamId)
+	teamInfo, err := server.GetTeamInfo(uuidTeamId)
+	if err != nil {
+		ctx.Status(http.StatusUnauthorized)
+		return
+	}
 
-	// call getteaminfo
-	//verify team is public
-	//var team
-	//var isPublic bool = team.ispublic
-
+	// verifies team is public
+	var isPublic string = teamInfo.Team.Visibility
+	if isPublic == "private" {
+		ctx.Status(http.StatusForbidden)
+		return
+	}
+	database.AddTeamMember(uuidUserId, uuidTeamId, "member")
 }
 
 func (server *Server) MemberInvite(ctx *gin.Context) {
@@ -352,7 +352,7 @@ func (server *Server) SetupTeamRoutes() {
 		group.POST("/join", server.MemberJoin)
 		group.POST("/:invitecode", server.MemberInvite)
 		//group.GET("/", server.GetAllTeams)
-		group.GET("/:id", server.GetTeamInfo)
+		group.GET("/:id", server.sendTeamInfo)
 		group.GET("/invite/:invitecode", server.GetTeamInfoByInviteCode)
 		// group.PUT("/:id", server.UpdateTeam)
 		// Step 3: Post Team Data API
