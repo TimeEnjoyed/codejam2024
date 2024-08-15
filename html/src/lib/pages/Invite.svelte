@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Page from '../components/Page.svelte';
-	import { Button, Card } from 'flowbite-svelte';
+	import { Button, Card, type PweightType } from 'flowbite-svelte';
 	import { onMount } from 'svelte';
 	import CodeJamTeam from '../models/team';
     import { type User } from '../models/user'
@@ -20,12 +20,26 @@
 	let teamEvent: CodeJamEvent | null = null;
 	let loading = true;
 	let error: any = null;
+    let teamId: string = '';
+
+    interface TeamInfo {
+        Team: CodeJamTeam
+        Event: CodeJamEvent
+        Members: TeamMember[]
+    }
 
 	async function loadData(invitecode: string) {
 		try {
 			const response = await getTeamByInvite(invitecode);
-			const data = await response.json();
+			const data: TeamInfo = await response.json();
 			teamData = data.Team;
+
+			if (teamData === null) {
+				console.log("TeamData was unexpectedly null: Check the server for logs.")
+				return
+			}
+            teamId = teamData.Id
+
 			teamMembers = data.Members;
 			teamEvent = data.Event;
 		} catch (err) {
@@ -40,16 +54,12 @@
 		loadData(params.invitecode);
 	}
 
-    // query teams table for matching invite_code. 
-    // getTeamByInvite()
-    // return table id
-    
-    // joinTeam()
-
-    // checks if user is logged in. 
-    // if not logged in, display: login to join team
-    // if logged in: button to fetch
-
+	if (!params || teamId === null) {
+		console.error("TeamID could not be assigned: Check the server for logs.")
+	}
+	
+	// TODO NEXT: after login, redirects to invite page
+    // after hitting join, redirects to team page
 
 </script>
 
@@ -62,7 +72,7 @@
                 Click below to join {teamMembers[0]?.DisplayName}'s team: 
             </div>
 
-            <Button href="/">Join {teamData?.Name}</Button>
+            <Button on:click={()=>joinTeam(teamId, params.invitecode)} href="/#/teams">Join {teamData?.Name}</Button>
 		{:else}
         <div class="py-4">
 			Must be logged in to join a team.
@@ -70,10 +80,6 @@
             <Button>
                 <a href="/oauth/redirect">Login with Discord <DiscordIcon /></a> 
             </Button>
-        
-            
 		{/if}
-
-
 	</Card>
 </Page>

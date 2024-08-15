@@ -20,8 +20,6 @@ async function loadData() {
     try {
         const response = await getUserTeams();
         userTeams = await response.json();  // Array of teams...
-        console.log(userTeams)
-
     } catch (err) {
         error = `Failed to load team data: ${err}`;
         console.error(err);
@@ -75,14 +73,8 @@ If not team owner, cannot view-->
 				<span>
 					<b>Description: </b>{userTeam.Description}
 				</span>
-
-
 			</Card>
-
-
-            {/each}
-
-			
+            {/each}		
 		{/if}
 	</Card>
 </Page>
