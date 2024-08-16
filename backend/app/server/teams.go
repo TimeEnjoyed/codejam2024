@@ -188,7 +188,7 @@ func (server *Server) CreateTeam(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
     if userId == nil {
-		ctx.Status(http.StatusBadRequest)
+		ctx.Status(http.StatusUnauthorized)
 		return
 	}
 	strUserId := userId.(string)
@@ -282,7 +282,7 @@ func (server *Server) UpdateTeamMembers(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
 	if userId != nil {
-		ctx.Status(http.StatusBadRequest)
+		ctx.Status(http.StatusUnauthorized)
 		return
 	}
 	//database.AddTeamMember(convert.StringToUUID(userId.(string), ))
@@ -294,7 +294,7 @@ func (server *Server) MemberJoin(ctx *gin.Context) {
 	fmt.Println(userId)
 
 	if userId == nil {
-		ctx.Status(http.StatusNotFound)
+		ctx.Status(http.StatusUnauthorized)
 		return
 	}
 	strUserId := userId.(string)
