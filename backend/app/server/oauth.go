@@ -66,7 +66,7 @@ func (server *Server) GetOAuthRedirect(ctx *gin.Context) {
 
 	if !strings.HasPrefix(redirect, "/") {
 		redirect = "/"
-	} else if !strings.HasPrefix(redirect, "/oauth") {
+	} else if strings.HasPrefix(redirect, "/oauth") {
 		redirect = "/"
 	} else {
 		redirect = fmt.Sprintf("/#%s", redirect)
