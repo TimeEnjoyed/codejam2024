@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -14,13 +15,18 @@ import (
 	githubOAuth "golang.org/x/oauth2/github"
 )
 
+type StateData struct {
+	Token    string
+	Redirect string
+}
+
 // SetupOAuth initializes the OAuth provider specified in the application config.
 func (server *Server) SetupOAuth() {
 	if server.Debug {
 		logger.Warn("Debug mode is set. No OAuth Providers are set!")
 		return
 	}
-	
+
 	var endpoint oauth2.Endpoint
 
 	switch strings.ToLower(server.Config.OAuth.Provider) {
@@ -46,12 +52,38 @@ func (server *Server) SetupOAuth() {
 }
 
 func (server *Server) GetOAuthRedirect(ctx *gin.Context) {
+	session := sessions.Default(ctx)
+	token, err := GenerateToken(16)
+
+	if err != nil {
+		ctx.String(500, "Internal Server Error")
+	}
+
+	redirect := ctx.Query("redirect")
+	if redirect == "" {
+		redirect = "/"
+	}
+
+	if !strings.HasPrefix(redirect, "/") {
+		redirect = "/"
+	} else {
+		redirect = fmt.Sprintf("/#%s", redirect)
+	}
+
+	state := StateData{Token: token, Redirect: redirect}
+	session.Set("state", state)
+	err = session.Save()
+
+	if err != nil {
+		logger.Error("Error saving session: %v", err)
+	}
+
 	if server.Debug {
 		ctx.Redirect(http.StatusFound, "/oauth/debug-login")
 		return
 	}
 
-	url := server.OAuth.AuthCodeURL(ctx.Request.Header.Get("Referer"))
+	url := server.OAuth.AuthCodeURL(token)
 	ctx.Redirect(http.StatusFound, url)
 }
 
@@ -74,7 +106,28 @@ func (server *Server) GetDebugSession(ctx *gin.Context) {
 
 func (server *Server) GetOAuthCallback(ctx *gin.Context) {
 	authCode := ctx.Query("code")
-	redir := ctx.Query("state")
+	stateCode := ctx.Query("state")
+
+	if len(stateCode) == 0 {
+		ctx.String(400, "Bad Request: Missing State Value.")
+		return
+	}
+
+	session := sessions.Default(ctx)
+	stateI := session.Get("state")
+
+	session.Clear()
+	session.Save()
+
+	var stateData *StateData
+	stateData, ok := stateI.(*StateData)
+	if !ok {
+		ctx.String(400, "Bad Request: Invalid State Data.")
+		return
+	}
+
+	redir := stateData.Redirect
+
 	token, err := server.OAuth.Exchange(oauth2.NoContext, authCode)
 	if err != nil {
 		// todo - can any of these be handled?
@@ -86,7 +139,6 @@ func (server *Server) GetOAuthCallback(ctx *gin.Context) {
 	providerUser := integrations.GetUser(integrationName, token.AccessToken)
 	if providerUser != nil {
 		dbUser := database.CreateUser(integrationName, providerUser.UserId, providerUser.DisplayName, providerUser.AvatarUrl)
-		session := sessions.Default(ctx)
 		session.Set("userId", convert.UUIDToString(dbUser.Id))
 		session.Set("displayName", dbUser.DisplayName)
 		err = session.Save()

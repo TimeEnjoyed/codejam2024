@@ -3,6 +3,7 @@ package server
 import (
 	"codejam.io/config"
 	"codejam.io/logging"
+	"encoding/gob"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
@@ -18,7 +19,7 @@ type Server struct {
 	Config config.Config
 	OAuth  *oauth2.Config
 	Gin    *gin.Engine
-	Debug bool
+	Debug  bool
 }
 
 func (server *Server) SetupSessionStore() {
@@ -46,6 +47,8 @@ func (server *Server) SetupSessionStore() {
 
 func (server *Server) StartServer() {
 	logger.Info("Starting server...")
+
+	gob.Register(&StateData{})
 
 	server.Gin = gin.Default()
 

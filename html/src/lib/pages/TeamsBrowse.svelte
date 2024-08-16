@@ -7,7 +7,9 @@ import { loggedInStore, userStore } from '../stores/stores';
 import CodeJamTeam from '../models/team';
 import type TeamMember from '../models/TeamMember';
 import DiscordIcon from '../components/DiscordIcon.svelte';
+import {location} from "svelte-spa-router";
 export const params: Record<string, never> = {};
+
 
 let teamData: CodeJamTeam | null = null;
 let teamMembers: TeamMember[] = [];
@@ -69,7 +71,7 @@ $: publicTeams = allTeams.filter(t => t.Visibility == "public" )
                 {:else}
                 <Button on:click={()=>(clickOutsideModal=true)}>Join</Button>
                 <Modal classBackdrop={"bg-gray-900/15 space-y-9"} bind:open={clickOutsideModal} autoclose outsideclose>
-                    <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400"><a href="/oauth/redirect">Login with Discord <DiscordIcon /></a>  to join a team!</p>
+                    <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400"><a href="/oauth/redirect?redirect={$location}">Login with Discord <DiscordIcon /></a>  to join a team!</p>
                 </Modal>
                 {/if}
 			</Card>

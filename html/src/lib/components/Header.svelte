@@ -63,7 +63,7 @@ $: activeUrl = '/#' + $location;
                             {/if}
 
                         {:else}
-                            <NavLi href="/oauth/redirect">Login with Discord <DiscordIcon/></NavLi>
+                            <NavLi href="/oauth/redirect?redirect={$location}">Login with Discord <DiscordIcon/></NavLi>
                         {/if}
                     </NavUl>
                 </Navbar>

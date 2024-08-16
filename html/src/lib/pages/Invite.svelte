@@ -10,6 +10,7 @@
 	import CodeJamEvent from '../models/event';
 	import { loggedInStore, userStore } from '../stores/stores';
 	import DiscordIcon from '../components/DiscordIcon.svelte';
+	import {location} from "svelte-spa-router";
 
 	export let params: any; // set by svelte-spa-router
     //console.log(params) // returns Object { invitecode: "d1869a59b4fdf3" }
@@ -78,7 +79,7 @@
 			Must be logged in to join a team.
         </div>
             <Button>
-                <a href="/oauth/redirect">Login with Discord <DiscordIcon /></a> 
+                <a href="/oauth/redirect?redirect={$location}">Login with Discord <DiscordIcon /></a> 
             </Button>
 		{/if}
 	</Card>
