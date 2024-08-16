@@ -128,6 +128,11 @@ func (server *Server) GetOAuthCallback(ctx *gin.Context) {
 		return
 	}
 
+	if stateData.Token != stateCode {
+		ctx.String(400, "Bad Request: Invalid State Code Provided.")
+		return
+	}
+
 	redir := stateData.Redirect
 
 	token, err := server.OAuth.Exchange(oauth2.NoContext, authCode)
