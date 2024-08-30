@@ -103,7 +103,7 @@ func (server *Server) GetTeamInfo(id pgtype.UUID) (*GetTeamResponse, error) {
 	var team database.DBTeam
 	var event database.DBEvent
 	var members *[]database.DBTeamMemberInfo //user info based on teamId
-
+	// fmt.Println("========id: ", id) prints: {[204 69 126 62 33 10 77 93 131 216 8 153 66 109 252 147] true}
 	team, err := database.GetTeam(id)
 	if err != nil {
 		logger.Error("failed to get team: %v", err)
@@ -291,7 +291,7 @@ func (server *Server) UpdateTeamMembers(ctx *gin.Context) {
 func (server *Server) MemberJoin(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
-	fmt.Println(userId)
+	fmt.Println("userID = ", userId)
 
 	if userId == nil {
 		ctx.Status(http.StatusUnauthorized)
@@ -300,28 +300,45 @@ func (server *Server) MemberJoin(ctx *gin.Context) {
 	strUserId := userId.(string)
 	uuidUserId := convert.StringToUUID(strUserId)
 
-
 	var teamId JoinPayload
 
 	if err := ctx.ShouldBindJSON(&teamId); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Println(teamId) // this prints {cc457e3e-210a-4d5d-83d8-0899426dfc93}
+	// teamId prints: {cc457e3e-210a-4d5d-83d8-0899426dfc93}
 	uuidTeamId := convert.StringToUUID(teamId.TeamId)
 	teamInfo, err := server.GetTeamInfo(uuidTeamId)
 	if err != nil {
-		ctx.Status(http.StatusUnauthorized)
-		return
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return 
 	}
+	// TODO: check if the user already exists in the team before adding the member. 
+	// use teamInfo: 
+	// type GetTeamResponse struct {
+	// 	Team    *database.DBTeam
+	// 	Event   *database.DBEvent
+	// 	Members *[]database.DBTeamMemberInfo // array(slice) of a struct
+	// }
+
+	fmt.Println("print (*teamInfo.Members)[0].DBUser.Id = ", convert.UUIDToString((*teamInfo.Members)[0].DBUser.Id)) 
+	// ^ dereferences pointer to get to actual slice of database.DBTeamMemberInfo, 
+	// then accesses the first element in dereferenced slice
+
 
 	// verifies team is public
 	var isPublic string = teamInfo.Team.Visibility
 	if isPublic == "private" {
 		ctx.Status(http.StatusForbidden)
+		return 
+	}
+	_, err = database.AddTeamMember(uuidUserId, uuidTeamId, "member")
+	if err != nil {
+		ctx.JSON(http.StatusConflict, err)
 		return
 	}
-	database.AddTeamMember(uuidUserId, uuidTeamId, "member")
+	strTeamId := convert.UUIDToString(teamInfo.Team.Id)
+	ctx.JSON(http.StatusOK, strTeamId)
 }
 
 func (server *Server) MemberInvite(ctx *gin.Context) {

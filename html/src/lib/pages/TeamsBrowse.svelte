@@ -67,7 +67,11 @@ $: publicTeams = allTeams.filter(t => t.Visibility == "public" )
 
                 // only shows if user isnt a member
                 {#if $loggedInStore}
-                <Button on:click={()=>joinPublicTeam(Team.Id)}>Join</Button>
+                <Button on:click={()=>joinPublicTeam(Team.Id)
+                // TODO: check if resTeamId is the team id or is an error message
+                // respond appropriately
+                                        .then((resTeamId) => {console.log("what is this: ", resTeamId); 
+                                        window.location.href = '/#/team/' + resTeamId;})}>Join</Button>
                 {:else}
                 <Button on:click={()=>(clickOutsideModal=true)}>Join</Button>
                 <Modal classBackdrop={"bg-gray-900/15 space-y-9"} bind:open={clickOutsideModal} autoclose outsideclose>

@@ -149,15 +149,20 @@ func UpdateTeam(team DBTeam) (DBTeam, error) {
 }
 
 // fields: userid, teamid, role
-// called at server/teams.go createTeam & when someone clicks "join team"
+// called at server/teams.go createTeam & when someone clicks "join team" 
 // DONT MESS WITH BELOW. IT WORKS.
 func AddTeamMember(userId pgtype.UUID, teamUUID pgtype.UUID, role string) (userID pgtype.UUID, err error) {
-	fmt.Println("=== line 100 userId", userId)
+	// userId prints something like: {[22 162 173 240 222 76 79 42 174 62 196 207 243 22 25 78] true}
+	
 	teamMember, err := GetRow[CreateTeamMember](
 		`INSERT INTO team_members
 			(user_id, team_id, team_role)
 			VALUES ($1, $2, $3)
 		RETURNING user_id, team_id, team_role`, userId, teamUUID, role)
+	if err != nil {
+		fmt.Println(err)
+		return userId, err
+	}
 	return teamMember.UserId, err
 }
 
