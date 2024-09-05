@@ -10,16 +10,18 @@ class CodeJamTeam {
     Availability: string;
     Description: string;
     InviteCode: string;
+    TeamMembers: TeamMember;
 
     constructor() {
         this.Id = '';
         this.EventId = '';
         this.Name = '';
-        this.Visibility = '';
+        this.Visibility = 'public';
         this.Technologies = '';
         this.Availability = '';
         this.Description = '';
         this.InviteCode = '';
+        this.TeamMembers = new TeamMember();
     }
 }
 

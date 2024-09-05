@@ -39,7 +39,6 @@ let textareaprops = {
 };
 
 let formData: CodeJamTeam | null = new CodeJamTeam();
-formData.Visibility = 'public';
 let isSaving: boolean = false;
 let teamCreated: boolean = false;
 
