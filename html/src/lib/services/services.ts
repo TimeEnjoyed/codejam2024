@@ -153,14 +153,14 @@ export async function joinTeam(teamId: string, inviteCode: string) {
 
 // write a joinPublicTeam function that accepts team Id.  
 // server: check if team is public.
-
 export async function joinPublicTeam(teamId: string) {
-    return await fetch(baseApiUrl + "/team/join",
+    const response = await fetch(baseApiUrl + "/team/join",
         {
             method: "POST",
             body: JSON.stringify({ teamId })
         }
     )
+    return response.json()
 }
 
 // Always call at startup to get the initial states
