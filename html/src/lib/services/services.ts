@@ -151,7 +151,6 @@ export async function joinTeam(teamId: string, inviteCode: string) {
 }
 
 
-
 // write a joinPublicTeam function that accepts team Id.  
 // server: check if team is public.
 

@@ -53,7 +53,7 @@ If not team owner, cannot view-->
             </div>
 		{:else if userTeams.length === 0}
             <div>
-                Looks like you don't have any teams! Go to <a href="/#/">browse teams</a> to join one!
+                Looks like you don't have any teams. Go to <a href="/#/teams/browse">browse</a> teams to join one or <a href="/#/teams/create">create</a> your own team!
             </div>
         {:else}
             {#each userTeams as userTeam}

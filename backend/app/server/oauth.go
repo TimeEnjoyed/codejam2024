@@ -122,6 +122,7 @@ func (server *Server) GetOAuthCallback(ctx *gin.Context) {
 	session.Save()
 
 	var stateData *StateData
+	// give the stateI a defined type/struct of stateData instead of interface{}/any:
 	stateData, ok := stateI.(*StateData)
 	if !ok {
 		ctx.String(400, "Bad Request: Invalid State Data.")

@@ -242,7 +242,6 @@ func (server *Server) CreateTeam(ctx *gin.Context) {
 	_, err = database.AddTeamMember(convert.StringToUUID(strUserId), teamUUID, "owner")
 
 	if err == nil {
-		fmt.Println("Successfully added team member")
 		ctx.JSON(http.StatusCreated, map[string]pgtype.UUID{
 			"id": teamUUID,
 		})
@@ -291,7 +290,7 @@ func (server *Server) UpdateTeamMembers(ctx *gin.Context) {
 func (server *Server) MemberJoin(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
-	fmt.Println("userID = ", userId)
+	//fmt.Println("userID = ", userId)
 
 	if userId == nil {
 		ctx.Status(http.StatusUnauthorized)
@@ -321,7 +320,7 @@ func (server *Server) MemberJoin(ctx *gin.Context) {
 	// 	Members *[]database.DBTeamMemberInfo // array(slice) of a struct
 	// }
 
-	fmt.Println("print (*teamInfo.Members)[0].DBUser.Id = ", convert.UUIDToString((*teamInfo.Members)[0].DBUser.Id)) 
+	// fmt.Println("print (*teamInfo.Members)[0].DBUser.Id = ", convert.UUIDToString((*teamInfo.Members)[0].DBUser.Id)) 
 	// ^ dereferences pointer to get to actual slice of database.DBTeamMemberInfo, 
 	// then accesses the first element in dereferenced slice
 
