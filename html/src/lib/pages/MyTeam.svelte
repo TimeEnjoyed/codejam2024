@@ -1,15 +1,12 @@
 <script lang="ts">
+	import { Breadcrumb, BreadcrumbItem, Card } from 'flowbite-svelte';
 	import Page from '../components/Page.svelte';
-	import { Breadcrumb, BreadcrumbItem, Button, Card } from 'flowbite-svelte';
-	import { onMount } from 'svelte';
-	import CodeJamTeam from '../models/team';
-	import { getTeamById } from '../services/services';
-	import { Label, Input } from 'flowbite-svelte';
 	import type TeamMember from '../models/TeamMember';
 	import CodeJamEvent from '../models/event';
-	import { loggedInStore, userStore } from '../stores/stores';
+	import CodeJamTeam from '../models/team';
+	import { getTeamById } from '../services/services';
 
-	interface Params {  // THis is what the params is because you pass an id with type of string.
+	interface Params {  // This is what the params is because you pass an id with type of string.
 		id: string
 	}
 	export let params: Params;
@@ -19,6 +16,7 @@
 	let teamEvent: CodeJamEvent | null = null;
 	let loading: boolean = true; 
 	let error: string | null = null; 
+    let teamCreated: boolean = false; // Reactivate variable to track if team was just created
 
 	async function loadData(id: string) {
 		try {
@@ -52,7 +50,9 @@
 		{:else if error}
 			<div class="p-4 text-red-500">{error}</div>
 		{:else if teamData !== null}
+            {#if teamCreated}
 			<div class="p-4">{teamMembers[0]?.DisplayName}, your team has been successfully created!</div>
+            {/if}
 			<h3 class="p-4">{teamEvent?.Title}</h3>
 			<Card size="xl" class="flex w-full p-8 px-4 py-6 space-y-3">
 				<center class="p-2">

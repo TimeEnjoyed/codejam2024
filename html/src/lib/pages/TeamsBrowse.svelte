@@ -1,15 +1,15 @@
 <script lang="ts">
 
+import { Button, Card, Modal } from "flowbite-svelte";
+import toast from 'svelte-french-toast';
+import { location } from "svelte-spa-router";
+import DiscordIcon from '../components/DiscordIcon.svelte';
 import Page from "../components/Page.svelte";
-import {Button, Card, Modal} from "flowbite-svelte";
-import {getTeams, joinPublicTeam} from "../services/services";
-import { loggedInStore, userStore } from '../stores/stores';
 import CodeJamTeam from '../models/team';
 import type TeamMember from '../models/TeamMember';
-import DiscordIcon from '../components/DiscordIcon.svelte';
-import {location} from "svelte-spa-router";
+import { getTeams, joinPublicTeam } from "../services/services";
+import { loggedInStore } from '../stores/stores';
 export const params: Record<string, never> = {};
-
 
 let teamData: CodeJamTeam | null = null;
 let teamMembers: TeamMember[] = [];
@@ -18,6 +18,19 @@ let error: string | null = null;
 let allTeams: CodeJamTeam[] = [];
 let publicTeams: CodeJamTeam[] = [];
 let clickOutsideModal = false;
+
+interface ErrorResponse {
+    Severity: string;
+    Code: string;
+    Message: string;
+    Detail?: string;
+    Hint?: string;
+    Position?: number;
+    InternalPosition?: number;
+    InternalQuery?: string;
+    Where?: string;
+    SchemaName?: string;
+}
 
 async function loadData() {
     try {
@@ -34,12 +47,18 @@ loadData();
 
 $: publicTeams = allTeams.filter(t => t.Visibility == "public" )
 
+function isValidTeamId(resTeamId: string | ErrorResponse): resTeamId is string {
+    // Check if resTeamId is an object with a 'Severity' property indicating an error
+    if (typeof resTeamId === 'object' && 'Severity' in resTeamId && resTeamId.Severity === 'ERROR') {
+      return false; // Not a valid Team ID
+    }
+    return true; // Valid Team ID
+}
 </script>
     
 <Page>
     <Card size="md" class="w-full flex">
         <h3>Browse All Teams</h3>
-
 
 		{#if loading}
 			<div class="p-4">Loading...</div>
@@ -68,10 +87,14 @@ $: publicTeams = allTeams.filter(t => t.Visibility == "public" )
                 // only shows if user isnt a member
                 {#if $loggedInStore}
                 <Button on:click={()=>joinPublicTeam(Team.Id)
-                // TODO: check if resTeamId is the team id or is an error message
-                // respond appropriately
-                                        .then((resTeamId) => {console.log("what is this: ", resTeamId); 
-                                        window.location.href = '/#/team/' + resTeamId;})}>Join</Button>
+                                        .then((resTeamId) => {
+                                            if (isValidTeamId(resTeamId)) {
+                                                toast.success("Successfully joined team")
+                                                window.location.href = '/#/team/' + resTeamId; // redirect to team page
+                                            } else {
+                                                toast.error("Error:" + resTeamId.Message)
+                                            }
+                                        })}>Join</Button>
                 {:else}
                 <Button on:click={()=>(clickOutsideModal=true)}>Join</Button>
                 <Modal classBackdrop={"bg-gray-900/15 space-y-9"} bind:open={clickOutsideModal} autoclose outsideclose>
@@ -87,6 +110,5 @@ $: publicTeams = allTeams.filter(t => t.Visibility == "public" )
 			
 		{/if}
 	</Card>
-
 </Page>
     
