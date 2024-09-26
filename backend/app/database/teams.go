@@ -14,7 +14,7 @@ type DBTeam struct {
 	Technologies string           `db:"technologies"`
 	Availability string           `db:"availability"`
 	Description  string           `db:"description"`
-	CreatedOn    pgtype.Timestamp `db:"created_on" json:"createdOn-hidden"`
+	CreatedOn    pgtype.Timestamp `db:"created_on"`
 	InviteCode   string           `db:"invite_code"`
 }
 
@@ -32,12 +32,27 @@ type DBTeamMemberInfo struct {
 
 // For team_member table.
 type DBTeamMember struct {
-	Id        pgtype.UUID      `db:"id"`
 	TeamId    pgtype.UUID      `db:"team_id"`
 	UserId    pgtype.UUID      `db:"user_id"`
 	TeamRole  string           `db:"team_role"`
-	CreatedOn pgtype.Timestamp `db:"created_on" json:"createdOn-hidden"`
+	CreatedOn pgtype.Timestamp `db:"created_on"`
 }
+//json:"createdOn-hidden"
+
+// type DBTeamAndMember struct {
+// 	DBTeam		// table teams
+// 	DBTeamMember DBTeamMember // table team_members
+// 	DisplayName string	`db:"display_name"` // table_user
+// }
+
+// type TeamAndMember struct {
+// 	DBTeam
+// 	TeamMembers	[]TeamMember
+// }
+// type TeamMember struct {
+// 	DBTeamMember 
+// 	DisplayName string
+// }
 
 type DBUserTeams struct {
 	DBTeam 
@@ -60,7 +75,7 @@ func CreateTeam(team DBTeam) (pgtype.UUID, error) {
 	return team.Id, err
 }
 
-// stepp 5: used to construct the GetTeamResponse struct
+// stepp 5: used to construct the GetTeamResponse struct in server/teams.go
 func GetTeam(teamId pgtype.UUID) (DBTeam, error) {
 	team, err := GetRow[DBTeam](
 		`SELECT 
@@ -109,10 +124,146 @@ func GetTeamByInvite(inviteCode string) (DBTeam, error) {
 	return team, nil
 }
 
-func GetTeams() ([]DBTeam, error) {
-	result, err := GetRows[DBTeam](`SELECT * FROM teams`)
-	return result, err
+type DBTeamAndMember struct {
+	Id           	pgtype.UUID      `db:"id"`
+	EventId      	pgtype.UUID      `db:"event_id"`
+	Name         	string           `db:"name"`
+	Visibility   	string           `db:"visibility"`
+	Timezone     	string           `db:"timezone"`
+	Technologies 	string           `db:"technologies"`
+	Availability 	string           `db:"availability"`
+	Description  	string           `db:"description"`
+	InviteCode   	string           `db:"invite_code"`
+	TeamId   		pgtype.UUID      `db:"team_id"`
+	UserId    		pgtype.UUID      `db:"user_id"`
+	TeamRole 	 	string           `db:"team_role"`
+	DisplayName 	string 			 `db:"display_name"`
+	AvatarId		string			 `db:"avatar_id"`
+	ServiceUserId 	string			 `db:"service_user_id`
 }
+
+type UITeam struct {
+	Id           pgtype.UUID      `db:"id"`
+	EventId      pgtype.UUID      `db:"event_id"`
+	Name         string           `db:"name"`
+	Visibility   string           `db:"visibility"`
+	Timezone     string           `db:"timezone"`
+	Technologies string           `db:"technologies"`
+	Availability string           `db:"availability"`
+	Description  string           `db:"description"`
+	InviteCode   string           `db:"invite_code"`
+}
+
+type UITeamMember struct {
+	TeamId    pgtype.UUID      	  `db:"team_id"`
+	UserId    pgtype.UUID      	  `db:"user_id"`
+	TeamRole  string          	  `db:"team_role"`
+}
+
+type TeamMember struct {
+	UITeamMember 
+	DisplayName	    string 		`db:"display_name"`
+	AvatarId		string 		`db:"avatar_id"`
+	ServiceUserId 	string 		`db:"service_user_id"`
+}
+
+type TeamAndMember struct {
+	UITeam
+	TeamMembers	[]TeamMember
+}
+
+func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
+	// instantiates array to store output, mapped by team id (uuid) for key
+	teamMap := make(map[pgtype.UUID]*TeamAndMember)
+	for _, item := range data {
+		// Check if team already exists in the map. This map loopkup returns:
+		// 1) value associated with the key if it exsits
+		// 2) boolean indicating whether key was found in the map
+		team, ok := teamMap[item.TeamId]
+		if !ok {
+			// Create a new team
+			team = &TeamAndMember{
+				UITeam: UITeam {
+					Id: 		item.TeamId,
+					EventId:      item.EventId,
+					Name:         item.Name,
+					Visibility:   item.Visibility,
+					Timezone:     item.Timezone,
+					Technologies: item.Technologies,
+					Availability: item.Availability,
+					Description:  item.Description,
+					InviteCode:   item.InviteCode,
+				},
+				TeamMembers: []TeamMember{},
+			}
+			teamMap[item.TeamId] = team
+		}
+		// Add team member to TeamMembers slice
+		member := TeamMember{
+			UITeamMember: UITeamMember{
+				TeamId:		item.TeamId,
+				UserId: 	item.UserId,
+				TeamRole: 	item.TeamRole,
+			},
+			DisplayName: item.DisplayName,
+			AvatarId: item.AvatarId,
+			ServiceUserId: item.ServiceUserId,
+		}
+		team.TeamMembers = append(team.TeamMembers, member)
+	}
+	// Convert map back to slice
+	var result []TeamAndMember
+	for _, team := range teamMap {
+		result = append(result, *team)
+	}
+	fmt.Println(result)
+	return result
+}
+
+func GetTeams() (*[]TeamAndMember, error){
+	// TODO: MAKE THE FLAT STRUCTURE HIERARCHICAL
+	teamAndMember, err := GetRows[DBTeamAndMember]( // returns { team 1: { userA: {display_name: "momo"}}, team 1...}
+		`SELECT 
+			t.id,
+			t.event_id, 
+			t.name, 
+			t.visibility,
+			t.timezone,
+			t.technologies,
+			t.availability,
+			t.description,
+			t.invite_code,
+			u.display_name,
+			u.avatar_id,
+			u.service_user_id,
+			tm.team_id,
+			tm.user_id,
+			tm.team_role
+			FROM teams t
+			INNER JOIN team_members tm ON (tm.team_id = t.id)
+			INNER JOIN users u ON (u.id = tm.user_id)
+            ORDER BY t.id
+		`,
+		)
+		if err != nil {
+			return nil, err
+		}
+	for _, t := range teamAndMember {
+		fmt.Printf("%v\n", t)
+	}
+	UITeamAndMember := MapToTeamAndMember(teamAndMember)
+	
+	//fmt.Printf("%T\n", t)
+	// var TeamMember TeamMember
+	// var DisplayName string
+	// var TeamAndMember 
+	// var TeamAndMembers []TeamAndMember
+
+	// // loop through teamAndMembers, if 
+
+	return &UITeamAndMember, err
+}
+
 
 func GetUserTeams(userId pgtype.UUID) ([]DBUserTeams, error) {
 	result, err := GetRows[DBUserTeams](

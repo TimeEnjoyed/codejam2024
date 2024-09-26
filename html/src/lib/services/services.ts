@@ -123,6 +123,8 @@ export async function postTeam(team: CodeJamTeam) {
 export async function getTeams() {
     return await fetch(baseApiUrl + "/teams/browse")
 }
+
+
 export async function getUserTeams(){
     return fetch(baseApiUrl + "/teams");
 }

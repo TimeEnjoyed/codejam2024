@@ -1,18 +1,20 @@
 <script lang="ts">
 
-import { Button, Card, Modal } from "flowbite-svelte";
+import { Avatar, Button, Card, Modal } from "flowbite-svelte";
 import toast from 'svelte-french-toast';
 import { location } from "svelte-spa-router";
 import DiscordIcon from '../components/DiscordIcon.svelte';
 import Page from "../components/Page.svelte";
 import CodeJamTeam from '../models/team';
-import type TeamMember from '../models/TeamMember';
+import TeamMember from '../models/TeamMember';
 import { getTeams, joinPublicTeam } from "../services/services";
-import { loggedInStore } from '../stores/stores';
+import { activeUserStore, loggedInStore } from '../stores/stores';
+
 export const params: Record<string, never> = {};
 
+//activeUserStore.set(<ActiveUser>{user: <User>responseData.Data, loggedIn: true});
+
 let teamData: CodeJamTeam | null = null;
-let teamMembers: TeamMember[] = [];
 let loading: boolean = true;
 let error: string | null = null;
 let allTeams: CodeJamTeam[] = [];
@@ -35,7 +37,9 @@ interface ErrorResponse {
 async function loadData() {
     try {
         const response = await getTeams();
+        console.log("response type: ", typeof response)
         allTeams = await response.json();  // Array of teams...
+        console.log("allTeams: ", allTeams)
     } catch (err) {
         error = `Failed to load team data: ${err}`;
     } finally {
@@ -72,6 +76,19 @@ function isValidTeamId(resTeamId: string | ErrorResponse): resTeamId is string {
 					<h4>Team {Team.Name}</h4>
                 </center>
                 <span>
+                    <b>Members: </b>
+
+                    <div class="flex mb-5">
+                    {#each Team.TeamMembers as Member}  
+                        <Avatar src="https://cdn.discordapp.com/avatars/{Member.ServiceUserId}/{Member.AvatarId}" title={Member.DisplayName} stacked />
+                    {/each}
+                    </div>
+                        
+
+                </span>
+
+				
+                <span>
 					<b>Visibility: </b>{Team.Visibility}
 				</span>
 				<span>
@@ -85,6 +102,7 @@ function isValidTeamId(resTeamId: string | ErrorResponse): resTeamId is string {
 				</span>
 
                 // only shows if user isnt a member
+            
                 {#if $loggedInStore}
                 <Button on:click={()=>joinPublicTeam(Team.Id)
                                         .then((resTeamId) => {
