@@ -10,7 +10,7 @@ class CodeJamTeam {
     Availability: string;
     Description: string;
     InviteCode: string;
-    TeamMembers: TeamMember;
+    TeamMembers: TeamMember[];
 
     constructor() {
         this.Id = '';
@@ -21,7 +21,7 @@ class CodeJamTeam {
         this.Availability = '';
         this.Description = '';
         this.InviteCode = '';
-        this.TeamMembers = new TeamMember();
+        this.TeamMembers = [];
     }
 }
 

@@ -3,8 +3,8 @@ class TeamMember {
     UserId: string;
     TeamRole: string;
     DisplayName: string;
-    AvatarId: string;
-    ServiceUserID: string;
+    AvatarUrl: string;
+    ServiceUserId: string;
 
     //TODO add Array<Teams> 
 
@@ -14,8 +14,8 @@ class TeamMember {
         this.UserId = '';
         this.TeamRole = '';
         this.DisplayName = '';
-        this.AvatarId = '';
-        this.ServiceUserID = '';
+        this.AvatarUrl = '';
+        this.ServiceUserId = '';
     }
 }
 

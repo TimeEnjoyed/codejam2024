@@ -9,6 +9,7 @@ import CodeJamTeam from '../models/team';
 import TeamMember from '../models/TeamMember';
 import { getTeams, joinPublicTeam } from "../services/services";
 import { activeUserStore, loggedInStore } from '../stores/stores';
+import { onMount } from "svelte";
 
 export const params: Record<string, never> = {};
 
@@ -20,6 +21,7 @@ let error: string | null = null;
 let allTeams: CodeJamTeam[] = [];
 let publicTeams: CodeJamTeam[] = [];
 let clickOutsideModal = false;
+let avatarUrls: Record<string, string> = {};
 
 interface ErrorResponse {
     Severity: string;
@@ -47,8 +49,33 @@ async function loadData() {
     }
 }
 
-loadData();
+async function getAvatarUrl(member: TeamMember): Promise<string> {
+    let ext = member.AvatarUrl.startsWith("a_") ? ".gif" : ".png";
+    return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarUrl}${ext}`
+}
 
+async function loadAvatarUrls() {
+    let members: TeamMember[] = [];
+
+    for (let team of allTeams) {
+        members.push(...team.TeamMembers)
+    }
+
+    const promises = members.map(async member => {
+        const url = await getAvatarUrl(member);
+        avatarUrls[member.UserId] = url;
+    });
+
+    await Promise.all(promises);
+}
+
+onMount(() => {
+    loadData();
+    loadAvatarUrls();
+});
+
+
+$: allTeams, loadAvatarUrls();
 $: publicTeams = allTeams.filter(t => t.Visibility == "public" )
 
 function isValidTeamId(resTeamId: string | ErrorResponse): resTeamId is string {
@@ -79,8 +106,8 @@ function isValidTeamId(resTeamId: string | ErrorResponse): resTeamId is string {
                     <b>Members: </b>
 
                     <div class="flex mb-5">
-                    {#each Team.TeamMembers as Member}  
-                        <Avatar src="https://cdn.discordapp.com/avatars/{Member.ServiceUserId}/{Member.AvatarId}" title={Member.DisplayName} stacked />
+                    {#each Team.TeamMembers as Member}
+                        <Avatar src="{avatarUrls[Member.UserId]}" title={Member.DisplayName} stacked />
                     {/each}
                     </div>
                         
