@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -10,7 +11,7 @@ type DBUser struct {
 	ServiceUserId string           `db:"service_user_id"`
 	Role          string           `db:"role"`
 	DisplayName   string           `db:"display_name"`
-	AvatarUrl     string           `db:"avatar_url"`
+	AvatarId      string           `db:"avatar_id"`
 	CreatedOn     pgtype.Timestamp `db:"created_on" json:"-"`
 }
 
@@ -19,16 +20,17 @@ const (
 	Admin = "ADMIN"
 )
 
-func CreateUser(serviceName string, serviceUserId string, serviceDisplayName string, avatarUrl string) DBUser {
+func CreateUser(serviceName string, serviceUserId string, serviceDisplayName string, avatarId string) DBUser {
 	user, err := GetRow[DBUser](
-		`INSERT INTO users (service_name, service_user_id, display_name, avatar_url)
+		`INSERT INTO users (service_name, service_user_id, display_name, avatar_id)
 		 VALUES ($1, $2, $3, $4)
 		 ON CONFLICT (service_name, service_user_id)
 		 DO UPDATE
-		 SET display_name = $3, avatar_url = $4
+		 SET display_name = $3, avatar_id = $4
 		 RETURNING *`,
-		serviceName, serviceUserId, serviceDisplayName, avatarUrl)
+		serviceName, serviceUserId, serviceDisplayName, avatarId)
 	if err != nil {
+		fmt.Println(serviceName, serviceUserId, serviceDisplayName, avatarId)
 		logger.Error("error getting user: %v", err)
 	}
 	return user

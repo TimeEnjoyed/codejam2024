@@ -130,6 +130,7 @@ func (server *Server) GetOAuthCallback(ctx *gin.Context) {
 	}
 
 	if stateData.Token != stateCode {
+		logger.Error("Invalid state token provided.")
 		ctx.String(400, "Bad Request: Invalid State Code Provided.")
 		return
 	}

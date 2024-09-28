@@ -67,12 +67,15 @@ func (server *Server) signupsAllowed(eventId string) bool {
 	}
 }
 
+// for path teams/browse
 func (server *Server) GetAllTeams(ctx *gin.Context) {
 	// what if there's no session => no user id
 	teams, err := database.GetTeams()
+	fmt.Println(teams)
 	if err == nil {
 		ctx.JSON(http.StatusOK, teams)
 	} else {
+		fmt.Println("ERROR: ", err)
 		ctx.Status(http.StatusInternalServerError)
 		return
 	}
@@ -143,7 +146,6 @@ func (server *Server) sendTeamInfo(ctx *gin.Context) {
 
 func (server *Server) GetTeamInfoByInviteCode(ctx *gin.Context) {
 	inviteCode := ctx.Param("invitecode")
-	fmt.Println("\n===server getteam by invite code: ", inviteCode)
 
 	var teamResponse GetTeamResponse
 	var team database.DBTeam
@@ -312,18 +314,6 @@ func (server *Server) MemberJoin(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return 
 	}
-	// TODO: check if the user already exists in the team before adding the member. 
-	// use teamInfo: 
-	// type GetTeamResponse struct {
-	// 	Team    *database.DBTeam
-	// 	Event   *database.DBEvent
-	// 	Members *[]database.DBTeamMemberInfo // array(slice) of a struct
-	// }
-
-	// fmt.Println("print (*teamInfo.Members)[0].DBUser.Id = ", convert.UUIDToString((*teamInfo.Members)[0].DBUser.Id)) 
-	// ^ dereferences pointer to get to actual slice of database.DBTeamMemberInfo, 
-	// then accesses the first element in dereferenced slice
-
 
 	// verifies team is public
 	var isPublic string = teamInfo.Team.Visibility

@@ -59,8 +59,6 @@
 		console.error("TeamID could not be assigned: Check the server for logs.")
 	}
 	
-	// TODO NEXT: after login, redirects to invite page
-    // after hitting join, redirects to team page
 
 </script>
 

@@ -58,6 +58,7 @@ type DBUserTeams struct {
 	DBTeam 
 	DisplayName	 	string		`db:"display_name"`
 	TeamRole		string 		`db:"team_role"`
+	AvatarId		string		`db:"avatar_id"`
 }
 
 func CreateTeam(team DBTeam) (pgtype.UUID, error) {
@@ -139,7 +140,7 @@ type DBTeamAndMember struct {
 	TeamRole 	 	string           `db:"team_role"`
 	DisplayName 	string 			 `db:"display_name"`
 	AvatarId		string			 `db:"avatar_id"`
-	ServiceUserId 	string			 `db:"service_user_id`
+	ServiceUserId 	string			 `db:"service_user_id"`
 }
 
 type UITeam struct {
@@ -163,7 +164,7 @@ type UITeamMember struct {
 type TeamMember struct {
 	UITeamMember 
 	DisplayName	    string 		`db:"display_name"`
-	AvatarId		string 		`db:"avatar_id"`
+	AvatarUrl		string 		`db:"avatar_id"`
 	ServiceUserId 	string 		`db:"service_user_id"`
 }
 
@@ -206,7 +207,7 @@ func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
 				TeamRole: 	item.TeamRole,
 			},
 			DisplayName: item.DisplayName,
-			AvatarId: item.AvatarId,
+			AvatarUrl: item.AvatarId,
 			ServiceUserId: item.ServiceUserId,
 		}
 		team.TeamMembers = append(team.TeamMembers, member)
@@ -221,7 +222,6 @@ func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
 }
 
 func GetTeams() (*[]TeamAndMember, error){
-	// TODO: MAKE THE FLAT STRUCTURE HIERARCHICAL
 	teamAndMember, err := GetRows[DBTeamAndMember]( // returns { team 1: { userA: {display_name: "momo"}}, team 1...}
 		`SELECT 
 			t.id,
