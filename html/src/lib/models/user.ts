@@ -1,10 +1,13 @@
 export interface User {
-    UserId: string;
+    Id: string;
     DisplayName: string;
     Role: string;
     ServiceName : string;
     ServiceUserId: string;
-    AvatarUrl: string;
+    ServiceUserName: string;
+    AvatarId: string;
+    AccountStatus: string;
+    LockDisplayName: boolean;
 }
 
 export interface ActiveUser {
