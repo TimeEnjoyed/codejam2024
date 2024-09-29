@@ -84,11 +84,12 @@ func (server *Server) GetAllTeams(ctx *gin.Context) {
 func (server *Server) GetUserTeams(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
+
 	if userId == nil {
 		ctx.Status(http.StatusNotFound)
 		return
 	}
-	strUserId := userId.(string)
+	strUserId := userId.(string) 
 
 	teams, err := database.GetUserTeams(convert.StringToUUID(strUserId))
 	if err != nil {

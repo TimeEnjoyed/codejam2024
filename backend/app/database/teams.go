@@ -269,6 +269,7 @@ func GetUserTeams(userId pgtype.UUID) ([]DBUserTeams, error) {
 	result, err := GetRows[DBUserTeams](
 		`SELECT
 			u.display_name,
+			u.avatar_id,
 			t.*, 
 			tm.team_role
 		FROM users u
