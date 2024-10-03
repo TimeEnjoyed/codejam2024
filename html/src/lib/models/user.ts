@@ -12,5 +12,6 @@ export interface User {
 
 export interface ActiveUser {
     user : User | null;
-    loggedIn : boolean;
+    loggedIn : boolean; 
+    userId : User["Id"] | null;
 }

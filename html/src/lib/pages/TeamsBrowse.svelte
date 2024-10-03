@@ -8,8 +8,9 @@ import Page from "../components/Page.svelte";
 import CodeJamTeam from '../models/team';
 import TeamMember from '../models/TeamMember';
 import { getTeams, joinPublicTeam } from "../services/services";
-import { activeUserStore, loggedInStore } from '../stores/stores';
+import { activeUserStore, loggedInStore, userStore } from '../stores/stores';
 import { onMount } from "svelte";
+	import { labelClass } from "flowbite-svelte/Radio.svelte";
 
 export const params: Record<string, never> = {};
 
@@ -69,9 +70,21 @@ async function loadAvatarUrls() {
     await Promise.all(promises);
 }
 
+let currUserId: string | undefined= $userStore?.Id
+
+function isUserInTeam(teamMembers: TeamMember[]): boolean {
+    for (let teamMember of teamMembers) { 
+        if (teamMember.UserId == currUserId) {
+            return true
+        }
+    }
+    return false
+}
+
 onMount(() => {
     loadData();
     loadAvatarUrls();
+
 });
 
 $: allTeams, loadAvatarUrls();
@@ -101,18 +114,15 @@ function isValidTeamId(resTeamId: string | ErrorResponse): resTeamId is string {
                 <center class="p-2">
                     <h4>Team {Team.Name}</h4>
                 </center>
+
                 <span>
                     <b>Members: </b>
-
-                    <div class="flex mb-5">
+                    <div class="flex mb-5 ml-3">
                     {#each Team.TeamMembers as Member}
                         <Avatar src="{avatarUrls[Member.UserId]}" title={Member.DisplayName} stacked />
                     {/each}
                     </div>
-                        
-
                 </span>
-
                 
                 <span>
                     <b>Visibility: </b>{Team.Visibility}
@@ -126,24 +136,30 @@ function isValidTeamId(resTeamId: string | ErrorResponse): resTeamId is string {
                 <span>
                     <b>Description: </b>{Team.Description}
                 </span>
-
-                // only shows if user isnt a member
-            
-                {#if $loggedInStore}
-                <Button on:click={()=>joinPublicTeam(Team.Id)
-                                        .then((resTeamId) => {
-                                            if (isValidTeamId(resTeamId)) {
-                                                toast.success("Successfully joined team")
-                                                window.location.href = '/#/team/' + resTeamId; // redirect to team page
-                                            } else {
-                                                toast.error("Error:" + resTeamId.Message)
-                                            }
-                                        })}>Join</Button>
-                {:else}
-                <Button on:click={()=>(clickOutsideModal=true)}>Join</Button>
-                <Modal classBackdrop={"bg-gray-900/15 space-y-9"} bind:open={clickOutsideModal} autoclose outsideclose>
-                    <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400"><a href="/oauth/redirect?redirect={$location}">Login with Discord <DiscordIcon /></a>  to join a team!</p>
-                </Modal>
+                
+                <!-- this loops for every team separately.  -->
+                {#if !$loggedInStore}
+                    NOT logged in, Log Into Discord button
+                    <Button on:click={()=>(clickOutsideModal=true)}>Join di</Button>
+                    <Modal classBackdrop={"bg-gray-900/15 space-y-9"} bind:open={clickOutsideModal} autoclose outsideclose>
+                        <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400"><a href="/oauth/redirect?redirect={$location}">Login with Discord <DiscordIcon /></a>  to join a team!</p>
+                    </Modal>   
+                {:else if $loggedInStore}
+                    {#if !isUserInTeam(Team.TeamMembers)}
+                        Show join button option
+                        <Button on:click={()=>joinPublicTeam(Team.Id)
+                            .then((resTeamId) => {
+                                if (isValidTeamId(resTeamId)) {
+                                    toast.success("Successfully joined team")
+                                    window.location.href = '/#/team/' + resTeamId; // redirect to team page
+                                } else {
+                                    toast.error("Error:" + resTeamId.Message)
+                                }
+                            })}>Join
+                        </Button>    
+                    {:else if isUserInTeam(Team.TeamMembers)}
+                        <Button disabled>Already joined</Button>
+                    {/if}
                 {/if}
             </Card>
             {:else}
