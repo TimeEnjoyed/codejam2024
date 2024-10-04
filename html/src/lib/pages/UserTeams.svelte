@@ -1,25 +1,31 @@
 <script lang="ts">
 import Page from '../components/Page.svelte';
-import { Breadcrumb, BreadcrumbItem, Card} from 'flowbite-svelte';
+import { Avatar, Breadcrumb, BreadcrumbItem, Card} from 'flowbite-svelte';
 
 import CodeJamTeam from '../models/team';
 import CodeJamEvent from '../models/event';
 import { getUserTeams } from '../services/services';
-import type TeamMember from '../models/TeamMember';
+import TeamMember from '../models/TeamMember';
+import { onMount } from 'svelte'
 
 export const params: Record<string, never> = {};
 
-let teamData: CodeJamTeam | null = null;
-let teamEvent: CodeJamEvent | null = null;
-let teamMembers: TeamMember[] = [];
+// TODO: 
+// show owner of team
+// show members
+// create edit button if user owns team 
+// -- can remove users and edit form inputs
+
 let loading: boolean = true;
 let error: string | null = null;
 let userTeams: CodeJamTeam[]
+let avatarUrls: Record<string, string> = {};
 
 async function loadData() {
     try {
         const response = await getUserTeams();
-        userTeams = await response.json();  // Array of teams...
+        userTeams = await response.json();  // Array of teams... 
+        //console.table("userTeams")
     } catch (err) {
         error = `Failed to load team data: ${err}`;
         console.error(err);
@@ -28,11 +34,37 @@ async function loadData() {
     }
 }
 
+async function getAvatarUrl(member: TeamMember): Promise<string> {
+    let ext = member.AvatarUrl.startsWith("a_") ? ".gif" : ".png";
+    return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarUrl}${ext}`
+}
 
-loadData();
+async function loadAvatarUrls() {
+    let members: TeamMember[] = [];
+    console.table(userTeams)
+    for (let team of userTeams) {
+            if ("TeamMembers" in team) {
+                members.push(...team.TeamMembers)
+            }
+            else {
+                console.log("TeamMembers not in team")
+            }
+    }
+
+    const promises = members.map(async member => {
+        const url = await getAvatarUrl(member);
+        avatarUrls[member.UserId] = url;
+    });
+
+    await Promise.all(promises);
+}
+onMount(() => {
+    loadData();
+    loadAvatarUrls();
+});
+
+$: userTeams, loadAvatarUrls();
 </script>
-<!-- TODO: Make this page only accessible by team owner 
-If not team owner, cannot view-->
 
 <Page>
     <Breadcrumb solid class="mb-4 w-full max-w-screen-xl">
@@ -61,6 +93,16 @@ If not team owner, cannot view-->
 				<center class="p-2">
 					<h4>Team {userTeam.Name}</h4>
 				</center>
+
+                <span>
+                    <b>Members: </b>
+                    <div class="flex mb-5 ml-3">
+                    {#each userTeam.TeamMembers as Member}
+                        <Avatar src="{avatarUrls[Member.UserId]}" title={Member.DisplayName} stacked />
+                    {/each}
+                    </div>
+                </span>
+
                 <span>
 					<b>Visibility: </b>{userTeam.Visibility}
 				</span>
