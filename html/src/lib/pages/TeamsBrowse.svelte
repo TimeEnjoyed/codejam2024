@@ -10,11 +10,8 @@ import TeamMember from '../models/TeamMember';
 import { getTeams, joinPublicTeam } from "../services/services";
 import { activeUserStore, loggedInStore, userStore } from '../stores/stores';
 import { onMount } from "svelte";
-	import { labelClass } from "flowbite-svelte/Radio.svelte";
 
 export const params: Record<string, never> = {};
-
-//activeUserStore.set(<ActiveUser>{user: <User>responseData.Data, loggedIn: true});
 
 let teamData: CodeJamTeam | null = null;
 let loading: boolean = true;
@@ -26,9 +23,9 @@ let avatarUrls: Record<string, string> = {};
 
 interface ErrorResponse {
     Severity: string;
+    Detail?: string;
     Code: string;
     Message: string;
-    Detail?: string;
     Hint?: string;
     Position?: number;
     InternalPosition?: number;
@@ -40,7 +37,7 @@ interface ErrorResponse {
 async function loadData() {
     try {
         const response = await getTeams();
-        console.log("response type: ", typeof response)
+
         allTeams = await response.json();  // Array of teams...
         console.log("allTeams: ", allTeams)
     } catch (err) {
@@ -81,10 +78,18 @@ function isUserInTeam(teamMembers: TeamMember[]): boolean {
     return false
 }
 
+function getTeamOwner(teamMembers: TeamMember[]): string {
+    let owner = teamMembers.find(member => member.TeamRole === "owner"); 
+    if (owner) {
+        return owner.DisplayName
+    } else {
+        return "No owner found."
+    }
+}
+
 onMount(() => {
     loadData();
     loadAvatarUrls();
-
 });
 
 $: allTeams, loadAvatarUrls();
@@ -114,7 +119,9 @@ function isValidTeamId(resTeamId: string | ErrorResponse): resTeamId is string {
                 <center class="p-2">
                     <h4>Team {Team.Name}</h4>
                 </center>
-
+                <span>
+                    <b>Owner: </b>{getTeamOwner(Team.TeamMembers)}
+                </span>
                 <span>
                     <b>Members: </b>
                     <div class="flex mb-5 ml-3">
@@ -134,7 +141,7 @@ function isValidTeamId(resTeamId: string | ErrorResponse): resTeamId is string {
                     <b>Availability: </b>{Team.Availability}
                 </span>
                 <span>
-                    <b>Description: </b>{Team.Description}
+                    <b>Description: </b>{Team.Description} 
                 </span>
                 
                 <!-- this loops for every team separately.  -->

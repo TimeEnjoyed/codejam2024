@@ -252,37 +252,47 @@ func GetTeams() (*[]TeamAndMember, error){
 		fmt.Printf("%v\n", t)
 	}
 	UITeamAndMember := MapToTeamAndMember(teamAndMember)
-	
-	//fmt.Printf("%T\n", t)
-	// var TeamMember TeamMember
-	// var DisplayName string
-	// var TeamAndMember 
-	// var TeamAndMembers []TeamAndMember
-
-	// // loop through teamAndMembers, if 
 
 	return &UITeamAndMember, err
 }
 
+type UserTeamAndMember struct {
 
-func GetUserTeams(userId pgtype.UUID) ([]DBUserTeams, error) {
-	result, err := GetRows[DBUserTeams](
+}
+
+func GetUserTeams(userId pgtype.UUID) (*[]TeamAndMember, error) {
+	result, err := GetRows[DBTeamAndMember](
 		`SELECT
+			t.id,
+			t.event_id, 
+			t.name, 
+			t.visibility,
+			t.timezone,
+			t.technologies,
+			t.availability,
+			t.description,
+			t.invite_code,
 			u.display_name,
 			u.avatar_id,
-			t.*, 
-			tm.team_role
-		FROM users u
-		INNER JOIN team_members tm ON u.id = tm.user_id
-		INNER JOIN teams t ON tm.team_id = t.id
-		WHERE u.id = $1`,
+			u.service_user_id,
+			tm.team_id,
+			tm.user_id,
+			tm.team_role, 
+			FROM teams t
+			INNER JOIN team_members tm ON (tm.team_id = t.id)
+			INNER JOIN users u ON (u.id = tm.user_id)
+			WHERE u.id = $1`,
 		userId)
 	if err != nil {
 		fmt.Println("that didn't work: database.GetUserTeams")
 		return nil, err
 	}
+	for _, t := range result {
+		fmt.Printf("%v\n", t)
+	}
+	UITeamAndMember := MapToTeamAndMember(result)
 
-	return result, err  // Try look at the table
+	return &UITeamAndMember, err  // Try look at the table
 }
 
 func UpdateTeam(team DBTeam) (DBTeam, error) {

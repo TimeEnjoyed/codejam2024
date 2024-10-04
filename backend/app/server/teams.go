@@ -71,7 +71,6 @@ func (server *Server) signupsAllowed(eventId string) bool {
 func (server *Server) GetAllTeams(ctx *gin.Context) {
 	// what if there's no session => no user id
 	teams, err := database.GetTeams()
-	fmt.Println(teams)
 	if err == nil {
 		ctx.JSON(http.StatusOK, teams)
 	} else {
