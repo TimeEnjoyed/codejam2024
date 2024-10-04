@@ -277,7 +277,7 @@ func GetUserTeams(userId pgtype.UUID) (*[]TeamAndMember, error) {
 			u.service_user_id,
 			tm.team_id,
 			tm.user_id,
-			tm.team_role, 
+			tm.team_role
 			FROM teams t
 			INNER JOIN team_members tm ON (tm.team_id = t.id)
 			INNER JOIN users u ON (u.id = tm.user_id)
