@@ -1,12 +1,13 @@
 <script lang="ts">
 import Page from '../components/Page.svelte';
-import { Avatar, Breadcrumb, BreadcrumbItem, Card} from 'flowbite-svelte';
+import { Avatar, Button, Breadcrumb, BreadcrumbItem, Card} from 'flowbite-svelte';
 
 import CodeJamTeam from '../models/team';
 import CodeJamEvent from '../models/event';
 import { getUserTeams } from '../services/services';
 import TeamMember from '../models/TeamMember';
 import { onMount } from 'svelte'
+	import { loggedInStore, userStore } from '../stores/stores';
 
 export const params: Record<string, never> = {};
 
@@ -58,6 +59,16 @@ async function loadAvatarUrls() {
 
     await Promise.all(promises);
 }
+
+function getTeamOwner(teamMembers: TeamMember[]): string {
+    let owner = teamMembers.find(member => member.TeamRole === "owner"); 
+    if (owner) {
+        return owner.DisplayName
+    } else {
+        return "No owner found."
+    }
+}
+
 onMount(() => {
     loadData();
     loadAvatarUrls();
@@ -90,10 +101,20 @@ $: userTeams, loadAvatarUrls();
         {:else}
             {#each userTeams as userTeam}
             <Card size="xl" class="flex w-full p-8 px-4 py-6 space-y-3">
+                {#if getTeamOwner(userTeam.TeamMembers) == $userStore?.DisplayName}
 				<center class="p-2">
 					<h4>Team {userTeam.Name}</h4>
+                        <a href='http://localhost:8080'>Edit your team</a> 
 				</center>
-
+                
+                {:else}
+                <center class="p-2">
+					<h4>Team {userTeam.Name}</h4>
+				</center>
+                {/if}
+                <span>
+                    <b>Owner: </b>{getTeamOwner(userTeam.TeamMembers)}
+                </span>
                 <span>
                     <b>Members: </b>
                     <div class="flex mb-5 ml-3">
