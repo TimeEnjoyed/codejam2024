@@ -8,8 +8,7 @@ import MyTeam from "./lib/pages/MyTeam.svelte";
 import Invite from "./lib/pages/Invite.svelte";
 import UserTeams from "./lib/pages/UserTeams.svelte";
 import ProfilePage from "./lib/pages/ProfilePage.svelte";
-
-
+import EditTeam from "./lib/pages/EditTeam.svelte";
 
 export default {
     '/': HomePage,
@@ -23,4 +22,5 @@ export default {
     '/teams/browse': TeamsBrowse,
     '/teams/create': TeamsCreate,
     '/profile': ProfilePage,
+    '/team/edit/:id': EditTeam
 }

@@ -7,7 +7,7 @@ import CodeJamEvent from '../models/event';
 import { getUserTeams } from '../services/services';
 import TeamMember from '../models/TeamMember';
 import { onMount } from 'svelte'
-	import { loggedInStore, userStore } from '../stores/stores';
+import { loggedInStore, userStore } from '../stores/stores';
 
 export const params: Record<string, never> = {};
 
@@ -104,7 +104,7 @@ $: userTeams, loadAvatarUrls();
                 {#if getTeamOwner(userTeam.TeamMembers) == $userStore?.DisplayName}
 				<center class="p-2">
 					<h4>Team {userTeam.Name}</h4>
-                        <a href='http://localhost:8080'>Edit your team</a> 
+                        <a href='/#/team/edit/{userTeam.Id}'>Edit your team</a> 
 				</center>
                 
                 {:else}
