@@ -16,7 +16,7 @@ export default {
     '/admin/events': EventList,
     '/admin/event/:id': EventEdit,
     '/team': TeamOptions,
-    '/team/:id': MyTeam, // link to one of your teams (sharable)  We get an id here in this route...
+    '/team/:id': MyTeam, // link to one of your teams (sharable) We get an id here in this route...
     '/team/invite/:invitecode': Invite, // sharable
     '/teams': UserTeams, // displays all the user's teams (private)
     '/teams/browse': TeamsBrowse,

@@ -165,6 +165,16 @@ export async function joinPublicTeam(teamId: string) {
     return response.json()
 }
 
+export async function removeMemberFromTeam(teamId: string, memberId: string) {
+    // DELETE request to remove a member from a specific team
+    return await fetch(baseApiUrl + `/team/${teamId}/member/${memberId}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+}
+
 // Always call at startup to get the initial states
 async function initialLoad() {
     await Promise.all([getUser(), getActiveEvent(), getEventStatuses()]);

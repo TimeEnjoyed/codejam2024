@@ -279,14 +279,29 @@ func (server *Server) UpdateTeam(ctx *gin.Context) {
 	}
 }
 
-func (server *Server) UpdateTeamMembers(ctx *gin.Context) {
+func (server *Server) RemoveTeamMember(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
-	if userId != nil {
+	if userId == nil {
 		ctx.Status(http.StatusUnauthorized)
 		return
 	}
-	//database.AddTeamMember(convert.StringToUUID(userId.(string), ))
+	strUserId := userId.(string)
+	uuidUserId := convert.StringToUUID(strUserId)
+
+	var teamId JoinPayload
+
+	if err := ctx.ShouldBindJSON(&teamId); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// teamId prints: {cc457e3e-210a-4d5d-83d8-0899426dfc93}
+	uuidTeamId := convert.StringToUUID(teamId.TeamId)
+	fmt.Println("user id: ", uuidUserId, "==== teamd id:", uuidTeamId)
+
+	//_, err := database.RemoveTeamMember(teamId, userId)
+	ctx.JSON(http.StatusOK, "pass")
+
 }
 
 func (server *Server) MemberJoin(ctx *gin.Context) {
@@ -354,16 +369,15 @@ func (server *Server) SetupTeamRoutes() {
 	group := server.Gin.Group("/team")
 	{
 		group.POST("/", server.CreateTeam)
-		group.POST("/edit/:teamid", server.UpdateTeamMembers) // for admin to remove people
 		group.POST("/join", server.MemberJoin)
 		group.POST("/:invitecode", server.MemberInvite)
-		//group.GET("/", server.GetAllTeams)
+
 		group.GET("/:id", server.sendTeamInfo)
 		group.GET("/invite/:invitecode", server.GetTeamInfoByInviteCode)
-		// group.PUT("/:id", server.UpdateTeam)
-		// Step 3: Post Team Data API
-	}
 
+		group.PUT("/edit/:teamid", server.UpdateTeam) // for admin to remove people
+		group.PUT("/team/:teamid/member/:memberid", server.RemoveTeamMember)
+	}
 	server.Gin.GET("/teams", server.GetUserTeams) // I think this works rofl
 	server.Gin.GET("/teams/browse", server.GetAllTeams)
 }

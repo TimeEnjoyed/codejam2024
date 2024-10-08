@@ -328,6 +328,10 @@ func AddTeamMember(userId pgtype.UUID, teamUUID pgtype.UUID, role string) (userI
 	return teamMember.UserId, err
 }
 
+func RemoveTeamMember(teamId pgtype.UUID, userId pgtype.UUID) {
+	
+}
+
 func GetMembersByTeamId(teamId pgtype.UUID) (*[]DBTeamMemberInfo, error) {
 	// In Go, you never return slice-data.
 	// Having * in sig means I'm returning the slice-header, which means I need & in my return
