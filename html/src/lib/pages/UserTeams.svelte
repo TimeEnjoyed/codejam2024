@@ -26,7 +26,7 @@
 		try {
 			const response = await getUserTeams();
 			userTeams = await response.json(); // Array of teams...
-            console.log(userTeams)
+			console.log(userTeams);
 		} catch (err) {
 			error = `Failed to load team data: ${err}`;
 			console.error(err);
@@ -75,7 +75,6 @@
 	});
 
 	$: userTeams, loadAvatarUrls();
-
 </script>
 
 <Page>
@@ -117,9 +116,7 @@
 					<span>
 						<b>Members: </b>
 						<div class="flex mb-5 ml-3">
-                            {console.log(userTeam.TeamMembers)}
 							{#each userTeam.TeamMembers as Member}
-
 								<Avatar src={avatarUrls[Member.UserId]} title={Member.DisplayName} stacked />
 							{/each}
 						</div>

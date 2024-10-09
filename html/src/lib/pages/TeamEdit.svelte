@@ -57,13 +57,9 @@
 			clearErrors();
 
 			formData.EventId = $activeEventStore?.Id || '';
-			// Step 1: Post Team Data API
+
 			postTeam(formData)
 				.then((response) => {
-					// parseResponse(response);
-					// const url = new URL(response.url);
-					// const pathSegments = url.pathname.split('/');
-					// const teamId = pathSegments[pathSegments.length - 1];
 					response
 						.json()
 						.then((data) => {
@@ -107,17 +103,16 @@
 		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarUrl}${ext}`;
 	}
 
+	//avatarUrls[member.UserId] = url;
 	async function loadAvatarUrls() {
-        let members: TeamMember[] = [];
-
+		let members: TeamMember[] = [];
 		const promises = members.map(async (member) => {
 			const url = await getAvatarUrl(member);
-            avatarUrls[member.UserId] = url;
 		});
 		await Promise.all(promises);
 	}
 
-	function loadData(id: string) {
+	async function loadData(id: string) {
 		try {
 			getTeamById(params.id).then((response) => {
 				response.json().then((data) => {
@@ -141,12 +136,8 @@
 
 	$: if (params) {
 		loadData(params.id);
+		loadAvatarUrls();
 	}
-    onMount(() => {
-        loadAvatarUrls();
-    });
-$: loadAvatarUrls();
-
 </script>
 
 <Page>
@@ -203,43 +194,48 @@ $: loadAvatarUrls();
 		{:else}
 			<Spinner />
 		{/if}
-        {#if loading}
+		{#if loading}
 			{console.log(formData, 'line 107')}
 			<div class="p-4">Loading...</div>
 		{:else if error}
 			<div class="p-4 text-red-500">{error}</div>
 		{:else if formData !== null}
-		<h2>Team Members</h2>
+			<h2>Team Members</h2>
 
-        <Table>
-            <TableHead>
-                <TableHeadCell>Avatar</TableHeadCell>
-                <TableHeadCell>Username</TableHeadCell>
-                <TableHeadCell>Role</TableHeadCell>
-                <TableHeadCell>
-                    <span class="sr-only">Delete</span>
-                </TableHeadCell>
-            </TableHead>
-            <TableBody tableBodyClass="divide-y">
-                {#each teamMembers as member}
-                <TableBodyRow>
-                    <TableBodyCell><Avatar src={avatarUrls[member.UserId]} title={member.DisplayName} /></TableBodyCell>
-                    <TableBodyCell>{member.DisplayName}</TableBodyCell>
-                    <TableBodyCell>{member.TeamRole}</TableBodyCell>
-                    <TableBodyCell>
-                        {#if member.TeamRole !== 'owner'}
-                            {member.UserId}
-                            <Button on:click={() => teamData?.Id && member.UserId && removeMember(teamData.Id, member.UserId)} class="btn-remove text-red-500 hover:text-red-700" color="light">
-                        Remove
-                        </Button>
-                        {/if}
-
-                    </TableBodyCell>
-                </TableBodyRow>
-                {/each}
-
-            </TableBody>
-        </Table>
-        {/if}
+			<Table>
+				<TableHead>
+					<TableHeadCell>Avatar</TableHeadCell>
+					<TableHeadCell>Username</TableHeadCell>
+					<TableHeadCell>Role</TableHeadCell>
+					<TableHeadCell>
+						<span class="sr-only">Delete</span>
+					</TableHeadCell>
+				</TableHead>
+				<TableBody tableBodyClass="divide-y">
+					{#each teamMembers as member}
+						<TableBodyRow>
+							<TableBodyCell
+								><Avatar src={avatarUrls[member.Id]} title={member.DisplayName} /></TableBodyCell
+							>
+							<TableBodyCell>{member.DisplayName}</TableBodyCell>
+							<TableBodyCell>{member.TeamRole}</TableBodyCell>
+							<TableBodyCell>
+								{#if member.TeamRole !== 'owner'}
+									{console.log(member)}
+									<Button
+										on:click={() =>
+											teamData?.Id && member.Id && removeMember(teamData.Id, member.Id)}
+										class="btn-remove text-red-500 hover:text-red-700"
+										color="light"
+									>
+										Remove
+									</Button>
+								{/if}
+							</TableBodyCell>
+						</TableBodyRow>
+					{/each}
+				</TableBody>
+			</Table>
+		{/if}
 	</Card>
 </Page>
