@@ -278,13 +278,18 @@ func GetUserTeams(userId pgtype.UUID) (*[]TeamAndMember, error) {
 			tm.team_id,
 			tm.user_id,
 			tm.team_role
+		FROM teams t
+		INNER JOIN team_members tm ON (tm.team_id = t.id)
+		INNER JOIN users u ON (u.id = tm.user_id)
+		WHERE t.id IN (
+			SELECT t.id
 			FROM teams t
 			INNER JOIN team_members tm ON (tm.team_id = t.id)
-			INNER JOIN users u ON (u.id = tm.user_id)
-			WHERE
-				(tm.team_role = 'owner' AND tm.user_id = $1)
-				OR 
-				(tm.team_role != 'owner' OR tm.user_id != $1)`,
+			WHERE tm.user_id = $1 AND tm.team_role = 'owner'
+		)
+		ORDER BY t.id`,
+		// The subquery retrieves the team IDs where the userId is the owner.
+		// The main query then uses these team IDs to select all the team members (both owners and non-owners)
 		userId)
 	if err != nil {
 		fmt.Println("that didn't work: database.GetUserTeams")
