@@ -6,12 +6,12 @@ import (
 )
 
 type DBUser struct {
-	Id            pgtype.UUID      `db:"id" `
+	Id            pgtype.UUID      `db:"id"`
 	ServiceName   string           `db:"service_name"`
 	ServiceUserId string           `db:"service_user_id"`
 	Role          string           `db:"role"`
 	DisplayName   string           `db:"display_name"`
-	AvatarId      string           `db:"avatar_id"`
+	AvatarId      string          `db:"avatar_id"`
 	CreatedOn     pgtype.Timestamp `db:"created_on" json:"-"`
 }
 

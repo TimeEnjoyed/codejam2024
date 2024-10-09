@@ -30,9 +30,9 @@ type CreateTeamRequest struct {
 }
 
 type GetTeamResponse struct {
-	Team    *database.DBTeam
-	Event   *database.DBEvent
-	Members *[]database.DBTeamMemberInfo // array(slice) of a struct
+	Team    	*database.DBTeam
+	Event   	*database.DBEvent
+	TeamMembers *[]database.DBTeamMemberInfo // array(slice) of a struct
 }
 
 type InvitePayload struct {
@@ -105,7 +105,7 @@ func (server *Server) GetTeamInfo(id pgtype.UUID) (*GetTeamResponse, error) {
 	var teamResponse GetTeamResponse
 	var team database.DBTeam
 	var event database.DBEvent
-	var members *[]database.DBTeamMemberInfo //user info based on teamId
+	var teamMembers *[]database.DBTeamMemberInfo //user info based on teamId
 	// fmt.Println("========id: ", id) prints: {[204 69 126 62 33 10 77 93 131 216 8 153 66 109 252 147] true}
 	team, err := database.GetTeam(id)
 	if err != nil {
@@ -119,7 +119,7 @@ func (server *Server) GetTeamInfo(id pgtype.UUID) (*GetTeamResponse, error) {
 		return nil, err
 	}
 
-	members, err = database.GetMembersByTeamId(team.Id)
+	teamMembers, err = database.GetMembersByTeamId(team.Id)
 	if err != nil {
 		logger.Error("failed to get event: %v", err)
 		return nil, err
@@ -128,7 +128,7 @@ func (server *Server) GetTeamInfo(id pgtype.UUID) (*GetTeamResponse, error) {
 	// attach all 3 structures to GetTeamResponse --> nested structs turn into nested JSON (with ctx.JSON)
 	teamResponse.Team = &team
 	teamResponse.Event = &event
-	teamResponse.Members = members
+	teamResponse.TeamMembers = teamMembers
 	
 	return &teamResponse, nil
 }
@@ -150,7 +150,7 @@ func (server *Server) GetTeamInfoByInviteCode(ctx *gin.Context) {
 	var teamResponse GetTeamResponse
 	var team database.DBTeam
 	var event database.DBEvent
-	var members *[]database.DBTeamMemberInfo //user info based on teamId
+	var teamMembers *[]database.DBTeamMemberInfo //user info based on teamId
 
 	team, err := database.GetTeamByInvite(inviteCode)
 	if err != nil {
@@ -168,7 +168,7 @@ func (server *Server) GetTeamInfoByInviteCode(ctx *gin.Context) {
 		return
 	}
 
-	members, err = database.GetMembersByTeamId(team.Id)
+	teamMembers, err = database.GetMembersByTeamId(team.Id)
 	if err != nil {
 		logger.Error("failed to get event: %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get members: %v", err)})
@@ -178,7 +178,7 @@ func (server *Server) GetTeamInfoByInviteCode(ctx *gin.Context) {
 	// attach all 3 structures to GetTeamResponse --> nested structs turn into nested JSON (with ctx.JSON)
 	teamResponse.Team = &team
 	teamResponse.Event = &event
-	teamResponse.Members = members
+	teamResponse.TeamMembers = teamMembers
 
 	fmt.Println(teamResponse)
 	ctx.JSON(http.StatusOK, teamResponse)

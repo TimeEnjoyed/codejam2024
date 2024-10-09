@@ -1,10 +1,7 @@
 <script lang="ts">
 	import Page from '../components/Page.svelte';
 	import { Avatar, Breadcrumb, BreadcrumbItem, Button, Card, Input } from 'flowbite-svelte';
-	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
-	import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 	import CodeJamTeam from '../models/team';
-	import { onMount } from 'svelte';
 	import { activeEventStore } from '../stores/stores';
 	import { getTeamById, postTeam, removeMemberFromTeam } from '../services/services';
 	import Helper from 'flowbite-svelte/Helper.svelte';
@@ -99,18 +96,32 @@
 	}
 
 	async function getAvatarUrl(member: TeamMember): Promise<string> {
-		let ext = member.AvatarUrl.startsWith('a_') ? '.gif' : '.png';
-		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarUrl}${ext}`;
+        console.log("member: ", member.AvatarId)
+		let ext = member.AvatarId.startsWith('a_') ? '.gif' : '.png';
+        console.log("meember.AvatarUrl: ", member.AvatarId)
+		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarId}${ext}`;
 	}
 
-	//avatarUrls[member.UserId] = url;
-	async function loadAvatarUrls() {
+    async function loadAvatarUrls() {
 		let members: TeamMember[] = [];
+
+        if (formData != null) { 
+            if ('TeamMembers' in formData) {
+                members.push(...formData.TeamMembers);
+        } else {
+            console.log('TeamMembers not in team');
+        }
+		console.log(`MEMBERS: ${members}`);
+
 		const promises = members.map(async (member) => {
+
 			const url = await getAvatarUrl(member);
+			avatarUrls[member.Id] = url;
 		});
+
 		await Promise.all(promises);
-	}
+        }
+    }
 
 	async function loadData(id: string) {
 		try {
@@ -118,13 +129,14 @@
 				response.json().then((data) => {
 					formData = data as CodeJamTeam;
 					teamData = data.Team;
-					teamMembers = data.Members;
+					teamMembers = data.TeamMembers;
 					teamEvent = data.Event;
 					teamName = data.Team.Name;
 					teamVisibility = data.Team.Visibility;
 					teamAvailability = data.Team.Availability;
 					teamTechnologies = data.Team.Technologies;
 					teamDescription = data.Team.Description;
+                    loadAvatarUrls();
 				});
 			});
 		} catch (err) {
@@ -135,9 +147,9 @@
 	}
 
 	$: if (params) {
-		loadData(params.id);
-		loadAvatarUrls();
+		loadData(params.id);     
 	}
+
 </script>
 
 <Page>
@@ -195,13 +207,12 @@
 			<Spinner />
 		{/if}
 		{#if loading}
-			{console.log(formData, 'line 107')}
 			<div class="p-4">Loading...</div>
 		{:else if error}
 			<div class="p-4 text-red-500">{error}</div>
+
 		{:else if formData !== null}
 			<h2>Team Members</h2>
-
 			<Table>
 				<TableHead>
 					<TableHeadCell>Avatar</TableHeadCell>
@@ -212,19 +223,18 @@
 					</TableHeadCell>
 				</TableHead>
 				<TableBody tableBodyClass="divide-y">
-					{#each teamMembers as member}
+					{#each formData.TeamMembers as Member}
 						<TableBodyRow>
-							<TableBodyCell
-								><Avatar src={avatarUrls[member.Id]} title={member.DisplayName} /></TableBodyCell
-							>
-							<TableBodyCell>{member.DisplayName}</TableBodyCell>
-							<TableBodyCell>{member.TeamRole}</TableBodyCell>
 							<TableBodyCell>
-								{#if member.TeamRole !== 'owner'}
-									{console.log(member)}
+                                <Avatar src={avatarUrls[Member.Id]} title={Member.DisplayName} />
+                            </TableBodyCell>
+							<TableBodyCell>{Member.DisplayName}</TableBodyCell>
+							<TableBodyCell>{Member.TeamRole}</TableBodyCell>
+							<TableBodyCell>
+								{#if Member.TeamRole !== 'owner'}
 									<Button
 										on:click={() =>
-											teamData?.Id && member.Id && removeMember(teamData.Id, member.Id)}
+											teamData?.Id && Member.Id && removeMember(teamData.Id, Member.Id)}
 										class="btn-remove text-red-500 hover:text-red-700"
 										color="light"
 									>
