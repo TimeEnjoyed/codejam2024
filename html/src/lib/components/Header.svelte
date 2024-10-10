@@ -22,8 +22,9 @@ $: activeUrl = '/#' + $location;
 </script>
 
 <div class="flex flex-row w-fit pl-8">
+ <!-- <div> -->
     <Banner size="normal" />
-    <div class="absolute right-0 top-0">
+    <div class="absolute right-0 top-0 justify-between">
 
         <!-- We don't want to set any initial component state until the activeUserStore has been initially
              set to avoid flickering state changes while data is initially loaded -->
@@ -31,13 +32,13 @@ $: activeUrl = '/#' + $location;
             <!-- do nothing-->
         {:then activeUser}
             {#if activeUser !== null}
-                <Navbar class="rounded-bl-3xl">
+                <Navbar class="rounded-bl-2xl">
                     {#if activeUser != null && activeUser.user != null}
-                        <div class="flex items-center md:order-2">
+                        <div class="flex items-center md:order-2 justify-between flex-grow">
                             <div id="menu-avatar">
-                                <UserAvatar user={activeUser.user} class="mx-8 cursor-pointer" size="md"></UserAvatar>
+                                <UserAvatar user={activeUser.user} class="mx-4 cursor-pointer" size="md"></UserAvatar>
                             </div>
-                            <NavHamburger class1="w-full md:flex md:w-auto md:order-1" />
+                            <NavHamburger class1="w-full md:flex md:w-auto md:order-1" style="background-color: #0000001a"/>
                         </div>
                         <!-- the binding to the triggeredBy element happens in the components onMount, and the target
                              element needs to already be mounted so the Dropdown can find it.  So we need to wait for
@@ -50,7 +51,7 @@ $: activeUrl = '/#' + $location;
                             <DropdownItem href="/user/logout">Logout</DropdownItem>
                         </Dropdown>
                     {/if}
-                    <NavUl {activeUrl} classUl="items-center px-4 py-1">
+                    <NavUl {activeUrl} classUl="items-left px-4 py-1">
                         <!-- It is important to prefix links with /#/ to prevent reloading of the entire app -->
                         <NavLi href="/#/">Home</NavLi>
                         {#if activeUser.user !== null}
