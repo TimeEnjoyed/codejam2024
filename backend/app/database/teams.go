@@ -126,7 +126,7 @@ func GetTeamByInvite(inviteCode string) (DBTeam, error) {
 }
 
 type DBTeamAndMember struct {
-	Id           	pgtype.UUID      `db:"id"`
+	Id         	    pgtype.UUID  	 `db:"id"`
 	EventId      	pgtype.UUID      `db:"event_id"`
 	Name         	string           `db:"name"`
 	Visibility   	string           `db:"visibility"`
@@ -157,14 +157,14 @@ type UITeam struct {
 
 type UITeamMember struct {
 	TeamId    pgtype.UUID      	  `db:"team_id"`
-	UserId    pgtype.UUID      	  `db:"user_id"`
+	UserId    	pgtype.UUID       `db:"user_id"`
 	TeamRole  string          	  `db:"team_role"`
 }
 
 type TeamMember struct {
 	UITeamMember 
 	DisplayName	    string 		`db:"display_name"`
-	AvatarUrl		string 		`db:"avatar_id"`
+	AvatarId		string 		`db:"avatar_id"`
 	ServiceUserId 	string 		`db:"service_user_id"`
 }
 
@@ -185,7 +185,7 @@ func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
 			// Create a new team
 			team = &TeamAndMember{
 				UITeam: UITeam {
-					Id: 		item.TeamId,
+					Id: 		  item.TeamId,
 					EventId:      item.EventId,
 					Name:         item.Name,
 					Visibility:   item.Visibility,
@@ -206,9 +206,9 @@ func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
 				UserId: 	item.UserId,
 				TeamRole: 	item.TeamRole,
 			},
-			DisplayName: item.DisplayName,
-			AvatarUrl: item.AvatarId,
-			ServiceUserId: item.ServiceUserId,
+			DisplayName: 	item.DisplayName,
+			AvatarId: 		item.AvatarId,
+			ServiceUserId:  item.ServiceUserId,
 		}
 		team.TeamMembers = append(team.TeamMembers, member)
 	}
@@ -254,10 +254,6 @@ func GetTeams() (*[]TeamAndMember, error){
 	UITeamAndMember := MapToTeamAndMember(teamAndMember)
 
 	return &UITeamAndMember, err
-}
-
-type UserTeamAndMember struct {
-
 }
 
 func GetUserTeams(userId pgtype.UUID) (*[]TeamAndMember, error) {

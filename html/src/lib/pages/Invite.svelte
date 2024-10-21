@@ -1,12 +1,9 @@
 <script lang="ts">
 	import Page from '../components/Page.svelte';
 	import { Button, Card, type PweightType } from 'flowbite-svelte';
-	import { onMount } from 'svelte';
 	import CodeJamTeam from '../models/team';
-    import { type User } from '../models/user'
+    import TeamMember from '../models/TeamMember';
 	import { getTeamByInvite, joinTeam } from '../services/services';
-	import { Label, Input } from 'flowbite-svelte';
-	import type TeamMember from '../models/TeamMember';
 	import CodeJamEvent from '../models/event';
 	import { loggedInStore, userStore } from '../stores/stores';
 	import DiscordIcon from '../components/DiscordIcon.svelte';
@@ -23,33 +20,28 @@
 	let error: any = null;
     let teamId: string = '';
 
+
     interface TeamInfo {
         Team: CodeJamTeam
         Event: CodeJamEvent
         Members: TeamMember[]
     }
 
-	async function loadData(invitecode: string) {
-		try {
-			const response = await getTeamByInvite(invitecode);
-			const data: TeamInfo = await response.json();
-			teamData = data.Team;
-
-			if (teamData === null) {
-				console.log("TeamData was unexpectedly null: Check the server for logs.")
-				return
-			}
-            teamId = teamData.Id
-
-			teamMembers = data.Members;
-			teamEvent = data.Event;
-		} catch (err) {
-			error = 'Failed to load team data.';
-			console.error(err);
-		} finally {
-			loading = false;
-		}
-	}
+    async function loadData(invitecode: string) {
+        try {
+            const response = await getTeamByInvite(invitecode);
+            const data = await response.json();
+			console.log(data);
+            teamData = data.Team;
+            teamMembers = data.TeamMembers;
+            teamEvent = data.Event;
+        } catch (err) {
+            error = 'Failed to load team data.';
+            console.error(err);
+        } finally {
+            loading = false;
+        }
+    }
 
 	$: if (params) {
 		loadData(params.invitecode);
@@ -64,21 +56,28 @@
 
 <Page>
 	<Card>
-		<h3>Join</h3>
-		{#if $loggedInStore}
-        <div class="py-4">
-                <div>Hi {$userStore?.DisplayName},</div> 
-                Click below to join {teamMembers[0]?.DisplayName}'s team: 
-            </div>
-
-            <Button on:click={()=>joinTeam(teamId, params.invitecode)} href="/#/teams">Join {teamData?.Name}</Button>
+		{#if loading}
+			<p>Loading...</p>
+		{:else if error}
+			<p>{error}</p>
 		{:else}
-        <div class="py-4">
-			Must be logged in to join a team.
-        </div>
-            <Button>
-                <a href="/oauth/redirect?redirect={$location}">Login with Discord <DiscordIcon /></a> 
-            </Button>
+			<h3>Join</h3>
+			{#if $loggedInStore}
+				<div class="py-4">
+					<div>Hi {$userStore?.DisplayName},</div>
+					<p>Click below to join {teamMembers[0]?.DisplayName}'s team:</p>
+					<Button on:click={() => joinTeam(teamId, params.invitecode)}>
+						Join {teamData?.Name}
+					</Button>
+				</div>
+			{:else}
+				<div class="py-4">
+					<p>Must be logged in to join a team.</p>
+					<Button>
+						<a href="/oauth/redirect?redirect={$location}">Login with Discord <DiscordIcon /></a>
+					</Button>
+				</div>
+			{/if}
 		{/if}
 	</Card>
 </Page>
