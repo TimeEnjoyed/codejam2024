@@ -314,6 +314,23 @@ func UpdateTeam(team DBTeam) (DBTeam, error) {
 	return event, err
 }
 
+type DBTeamInviteCode struct {
+	InviteCode   string		`db:"invite_code"`
+}
+
+func GetTeamInviteCode(teamId pgtype.UUID) (inviteCode DBTeamInviteCode, err error) {
+	fmt.Println(teamId)
+	teamInviteCode, err := GetRow[DBTeamInviteCode](
+		`SELECT teams.invite_code
+		FROM teams 
+		WHERE teams.id = $1`, teamId)
+	if err != nil {
+		logger.Error("failed to retrieve invite code for teamId %v: %w", teamId, err)
+	}
+	return teamInviteCode, err
+}
+
+
 // fields: userid, teamid, role
 // called at server/teams.go createTeam & when someone clicks "join team" 
 // DONT MESS WITH BELOW. IT WORKS.

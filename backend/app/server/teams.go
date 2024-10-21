@@ -137,10 +137,11 @@ func (server *Server) sendTeamInfo(ctx *gin.Context) {
 	id := convert.StringToUUID(ctx.Param("id"))
 
 	teamResponse, err := server.GetTeamInfo(id)
+
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 	}
-
+	fmt.Printf("%+v\n", teamResponse.TeamMembers)
 	ctx.JSON(http.StatusOK, teamResponse)
 }
 
@@ -357,11 +358,25 @@ func (server *Server) MemberInvite(ctx *gin.Context) {
 	}
 	inviteCode := payload.InviteCode
 	teamId := payload.TeamId
+	uuidTeamId := convert.StringToUUID(teamId)
+	strUserId := userId.(string)
+	uuidUserId := convert.StringToUUID(strUserId)
 
-	fmt.Println("===316", inviteCode, teamId, userId)
-
-	//var team database.DBTeamMemberInfo
-	// to add a member, i need to add a user to team_member table
+	// I want to check if the inviteCode matches the teams invite code
+	dbInviteCode, err := database.GetTeamInviteCode(uuidTeamId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, inviteCode)
+	} 
+	fmt.Println("server dbInviteCode: ", dbInviteCode)
+	if inviteCode != dbInviteCode.InviteCode {
+		fmt.Println("invalid request")
+	} else {
+		_, err = database.AddTeamMember(uuidUserId, uuidTeamId, "member")
+		if err != nil {
+			ctx.JSON(http.StatusConflict, err)
+			return
+		}
+	}
 }
 
 
