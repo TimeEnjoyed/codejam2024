@@ -79,13 +79,13 @@
 		}
 	}
 
-	function removeMember(teamId: string, memberId: string) {
+	function removeMember(teamId: string, memberUserId: string) {
 		if (confirm('Are you sure you want to remove this team member?')) {
 			// Call API to remove member
-			removeMemberFromTeam(teamId, memberId)
+			removeMemberFromTeam(teamId, memberUserId)
 				.then(() => {
 					// Update formData to reflect changes
-					teamMembers = teamMembers.filter((member) => member.UserId !== memberId);
+					teamMembers = teamMembers.filter((member) => member.UserId !== memberUserId);
 					toast.success('Member removed successfully');
 				})
 				.catch((err) => {
@@ -96,7 +96,7 @@
 	}
 
 	async function getAvatarUrl(member: TeamMember): Promise<string> {
-        console.log("member: ", member.AvatarId)
+        console.log("member: ", member)
 		let ext = member.AvatarId.startsWith('a_') ? '.gif' : '.png';
         console.log("meember.AvatarUrl: ", member.AvatarId)
 		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarId}${ext}`;
@@ -105,23 +105,22 @@
     async function loadAvatarUrls() {
 		let members: TeamMember[] = [];
 
-        if (formData != null) { 
-            if ('TeamMembers' in formData) {
-                members.push(...formData.TeamMembers);
-        } else {
-            console.log('TeamMembers not in team');
-        }
+        members.push(...teamMembers);
+
 		console.log(`MEMBERS: ${members}`);
 
 		const promises = members.map(async (member) => {
-
 			const url = await getAvatarUrl(member);
+
+            // for this page, we use Id instead of UserId because it queries the User table, which uses 'Id'
+            // may need to make a new class/model if we want to fix the error: Property 'Id' does not exist on type 'TeamMember'.
 			avatarUrls[member.Id] = url;
 		});
 
 		await Promise.all(promises);
-        }
+
     }
+    
 
 	async function loadData(id: string) {
 		try {
@@ -137,7 +136,7 @@
 					teamTechnologies = data.Team.Technologies;
 					teamDescription = data.Team.Description;
                     loadAvatarUrls();
-				});
+                });
 			});
 		} catch (err) {
 			error = `Failed to load team data: ${err}`;
@@ -203,16 +202,7 @@
 					{/if}
 				</Button>
 			</div>
-		{:else}
-			<Spinner />
-		{/if}
-		{#if loading}
-			<div class="p-4">Loading...</div>
-		{:else if error}
-			<div class="p-4 text-red-500">{error}</div>
-
-		{:else if formData !== null}
-			<h2>Team Members</h2>
+            <h2>Team Members</h2>
 			<Table>
 				<TableHead>
 					<TableHeadCell>Avatar</TableHeadCell>
@@ -246,6 +236,8 @@
 					{/each}
 				</TableBody>
 			</Table>
+		{:else}
+			<Spinner />
 		{/if}
 	</Card>
 </Page>

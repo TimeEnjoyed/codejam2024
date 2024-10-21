@@ -1,6 +1,6 @@
 class TeamMember {
     TeamId: string;
-    Id: string;
+    UserId: string;
     TeamRole: string;
     DisplayName: string;
     AvatarId: string;
@@ -11,7 +11,7 @@ class TeamMember {
     constructor() {
 
         this.TeamId = '';
-        this.Id = '';
+        this.UserId = '';
         this.TeamRole = '';
         this.DisplayName = '';
         this.AvatarId = '';

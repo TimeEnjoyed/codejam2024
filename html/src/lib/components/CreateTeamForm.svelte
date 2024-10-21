@@ -65,7 +65,7 @@ function saveForm() {
                         teamCreated = true;
                         // Stepp 1: GET team info
                         // this uses routes.ts --> MyTeam.svelte page
-                        window.location.href = `/#/team/${data.id}`;
+                        window.location.href = `/#/team/${data.id}?teamCreated=true`;
                         toast.success("You've successfully created a team")
                         isSaving = false;
                         
@@ -116,7 +116,6 @@ function saveForm() {
                 </FormField>
             </Form>
             
-
             <Button on:click={saveForm} disabled={isSaving}>
                 {#if isSaving}
                     <Spinner/>

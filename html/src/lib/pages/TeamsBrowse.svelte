@@ -47,8 +47,8 @@
 	}
 
 	async function getAvatarUrl(member: TeamMember): Promise<string> {
-		let ext = member.AvatarUrl.startsWith('a_') ? '.gif' : '.png';
-		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarUrl}${ext}`;
+		let ext = member.AvatarId.startsWith('a_') ? '.gif' : '.png';
+		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarId}${ext}`;
 	}
 
 	async function loadAvatarUrls() {
@@ -147,7 +147,6 @@
 
 					<!-- this loops for every team separately.  -->
 					{#if !$loggedInStore}
-						NOT logged in, Log Into Discord button
 						<Button on:click={() => (clickOutsideModal = true)}>Join di</Button>
 						<Modal
 							classBackdrop={'bg-gray-900/15 space-y-9'}
@@ -162,8 +161,7 @@
 						</Modal>
 					{:else if $loggedInStore}
 						{#if !isUserInTeam(Team.TeamMembers)}
-							Show join button option
-							<Button
+                            <Button
 								on:click={() =>
 									joinPublicTeam(Team.Id).then((resTeamId) => {
 										if (isValidTeamId(resTeamId)) {

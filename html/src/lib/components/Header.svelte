@@ -22,12 +22,11 @@ $: activeUrl = '/#' + $location;
 </script>
 
 <div class="flex flex-row w-fit pl-8">
- <!-- <div> -->
     <Banner size="normal" />
     <div class="absolute right-0 top-0 justify-between">
 
         <!-- We don't want to set any initial component state until the activeUserStore has been initially
-             set to avoid flickering state changes while data is initially loaded -->
+        set to avoid flickering state changes while data is initially loaded -->
         {#await $activeUserStore}
             <!-- do nothing-->
         {:then activeUser}
@@ -41,9 +40,9 @@ $: activeUrl = '/#' + $location;
                             <NavHamburger class1="w-full md:flex md:w-auto md:order-1" style="background-color: #0000001a"/>
                         </div>
                         <!-- the binding to the triggeredBy element happens in the components onMount, and the target
-                             element needs to already be mounted so the Dropdown can find it.  So we need to wait for
-                             the activeUserStore to be initially set before these components are mounted to prevent
-                             a race condition when the Dropdown doesn't bind and therefore won't work -->
+                            element needs to already be mounted so the Dropdown can find it.  So we need to wait for
+                            the activeUserStore to be initially set before these components are mounted to prevent
+                            a race condition when the Dropdown doesn't bind and therefore won't work -->
                         <Dropdown class="w-44" placement="bottom" triggeredBy="#menu-avatar" trigger="hover">
                             <DropdownHeader>{activeUser.user?.DisplayName}</DropdownHeader>
                             <DropdownItem href="/#/profile">Profile</DropdownItem>

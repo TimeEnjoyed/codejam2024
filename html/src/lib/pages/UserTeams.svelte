@@ -1,9 +1,7 @@
 <script lang="ts">
 	import Page from '../components/Page.svelte';
 	import { Avatar, Button, Breadcrumb, BreadcrumbItem, Card } from 'flowbite-svelte';
-
 	import CodeJamTeam from '../models/team';
-	import CodeJamEvent from '../models/event';
 	import { getUserTeams } from '../services/services';
 	import TeamMember from '../models/TeamMember';
 	import { onMount } from 'svelte';
@@ -26,31 +24,32 @@
 		try {
 			const response = await getUserTeams();
 			userTeams = await response.json(); // Array of teams...
-			console.log(userTeams);
 		} catch (err) {
 			error = `Failed to load team data: ${err}`;
 			console.error(err);
 		} finally {
 			loading = false;
 		}
+        loadAvatarUrls();
 	}
 
 	async function getAvatarUrl(member: TeamMember): Promise<string> {
-		let ext = member.AvatarUrl.startsWith('a_') ? '.gif' : '.png';
-		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarUrl}${ext}`;
+        console.log(member.AvatarId)
+		let ext = member.AvatarId.startsWith('a_') ? '.gif' : '.png';
+		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarId}${ext}`;
 	}
 
 	async function loadAvatarUrls() {
 		let members: TeamMember[] = [];
 
 		for (let team of userTeams) {
-			if ('TeamMembers' in team) {
+            console.log("team: ", team)
+			if (team['TeamMembers']) {
 				members.push(...team.TeamMembers);
 			} else {
 				console.log('TeamMembers not in team');
 			}
 		}
-
 		console.log(`MEMBERS: ${members}`);
 
 		const promises = members.map(async (member) => {
@@ -59,7 +58,8 @@
 		});
 
 		await Promise.all(promises);
-	}
+        console.log("avatarURls-------- :", avatarUrls)
+    }
 
 	function getTeamOwner(teamMembers: TeamMember[]): string {
 		let owner = teamMembers.find((member) => member.TeamRole === 'owner');
@@ -74,7 +74,6 @@
 		loadData();
 	});
 
-	$: userTeams, loadAvatarUrls();
 </script>
 
 <Page>
@@ -91,7 +90,7 @@
 		{:else if error}
 			<div class="p-4 text-red-500">{error}</div>
 		{:else if userTeams === null}
-			<div>Error, please contact admin.</div>
+			<div>You currently don't have any teams!</div>
 		{:else if userTeams.length === 0}
 			<div>
 				Looks like you don't have any teams. Go to <a href="/#/teams/browse">browse</a> teams to
