@@ -38,6 +38,7 @@
 	let teamAvailability: string = '';
 	let teamTechnologies: string = '';
 	let teamDescription: string = '';
+    let teamInviteCode: string = '';
 
 	let loading: boolean = true;
 	let formData: CodeJamTeam | null = null;
@@ -128,6 +129,7 @@
 				response.json().then((data) => {
 					formData = data as CodeJamTeam;
 					teamData = data.Team;
+                    teamInviteCode = data.Team.InviteCode;
 					teamMembers = data.TeamMembers;
 					teamEvent = data.Event;
 					teamName = data.Team.Name;
@@ -202,6 +204,11 @@
 					{/if}
 				</Button>
 			</div>
+            <span class="my-5">
+                <!-- TODO: update link when live -->
+                <b>Invite Link:</b> https://localhost:8080/#/team/invite/{teamInviteCode}
+            </span>
+
             <h2>Team Members</h2>
 			<Table>
 				<TableHead>

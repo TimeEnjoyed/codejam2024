@@ -10,10 +10,9 @@
 	export const params: Record<string, never> = {};
 
 	// TODO:
-	// show owner of team
-	// show members
 	// create edit button if user owns team
 	// -- can remove users and edit form inputs
+    // -- add invite link to c/p
 
 	let loading: boolean = true;
 	let error: string | null = null;
@@ -43,14 +42,12 @@
 		let members: TeamMember[] = [];
 
 		for (let team of userTeams) {
-            console.log("team: ", team)
 			if (team['TeamMembers']) {
 				members.push(...team.TeamMembers);
 			} else {
 				console.log('TeamMembers not in team');
 			}
 		}
-		console.log(`MEMBERS: ${members}`);
 
 		const promises = members.map(async (member) => {
 			const url = await getAvatarUrl(member);
@@ -58,7 +55,6 @@
 		});
 
 		await Promise.all(promises);
-        console.log("avatarURls-------- :", avatarUrls)
     }
 
 	function getTeamOwner(teamMembers: TeamMember[]): string {
@@ -73,7 +69,6 @@
 	onMount(() => {
 		loadData();
 	});
-
 </script>
 
 <Page>
