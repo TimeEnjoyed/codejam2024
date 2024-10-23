@@ -109,6 +109,7 @@ func (server *Server) GetDebugSession(ctx *gin.Context) {
 func (server *Server) GetOAuthCallback(ctx *gin.Context) {
 	authCode := ctx.Query("code")
 	stateCode := ctx.Query("state")
+	fmt.Println(stateCode)
 
 	if len(stateCode) == 0 {
 		ctx.String(400, "Bad Request: Missing State Value.")
@@ -147,7 +148,7 @@ func (server *Server) GetOAuthCallback(ctx *gin.Context) {
 	integrationName := strings.ToLower(server.Config.OAuth.Provider)
 	providerUser := integrations.GetUser(integrationName, token.AccessToken)
 	if providerUser != nil {
-		dbUser := database.CreateUser(integrationName, providerUser.UserId, providerUser.DisplayName, providerUser.AvatarUrl)
+		dbUser := database.CreateUser(integrationName, providerUser.UserId, providerUser.DisplayName, providerUser.AvatarId)
 		session.Set("userId", convert.UUIDToString(dbUser.Id))
 		session.Set("displayName", dbUser.DisplayName)
 		err = session.Save()

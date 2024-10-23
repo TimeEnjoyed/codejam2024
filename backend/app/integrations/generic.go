@@ -14,7 +14,7 @@ type IntegrationUser struct {
 	IntegrationName string
 	UserId          string
 	DisplayName     string
-	AvatarUrl       string
+	AvatarId      string
 }
 
 func getGitHubUser(accessToken string) *IntegrationUser {
@@ -31,6 +31,10 @@ func getGitHubUser(accessToken string) *IntegrationUser {
 
 func getDiscordUser(accessToken string) *IntegrationUser {
 	user := discord.GetUser(accessToken)
+	avatar, ok := user["avatar"].(string)
+    if !ok {
+        avatar = "" // Or set a default avatar URL if preferred
+    }
 	if user == nil {
 		logger.Error("User not found for token: %s", accessToken)
 		return nil
@@ -39,7 +43,7 @@ func getDiscordUser(accessToken string) *IntegrationUser {
 			IntegrationName: "discord",
 			UserId:          user["id"].(string),
 			DisplayName:     user["global_name"].(string),
-			AvatarUrl:       user["avatar"].(string),
+			AvatarId:        avatar,
 		}
 	}
 }
