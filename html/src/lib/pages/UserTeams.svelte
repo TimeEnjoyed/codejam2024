@@ -2,7 +2,7 @@
 	import Page from '../components/Page.svelte';
 	import { Avatar, Button, Breadcrumb, BreadcrumbItem, Card } from 'flowbite-svelte';
 	import CodeJamTeam from '../models/team';
-	import { getUserTeams } from '../services/services';
+	import { getUserOwnedTeams } from '../services/services';
 	import TeamMember from '../models/TeamMember';
 	import { onMount } from 'svelte';
 	import { loggedInStore, userStore } from '../stores/stores';
@@ -21,8 +21,9 @@
 
 	async function loadData() {
 		try {
-			const response = await getUserTeams();
+			const response = await getUserOwnedTeams();
 			userTeams = await response.json(); // Array of teams...
+            console.log("userTeams: ", userTeams)
 		} catch (err) {
 			error = `Failed to load team data: ${err}`;
 			console.error(err);
@@ -69,6 +70,13 @@
 	onMount(() => {
 		loadData();
 	});
+
+// Currently, I'm querying every team where the loggedin user is the owner, and separating all the members. 
+// I'm also checking client side whether the loggined user is the owner or not. 
+// -- If it's an owner, it shows an edit button. 
+
+// Following, I think I should show a list of all the teams the loggedin user is only a member in.
+// This means querying for every team where the user.id matches the tm.userId of any team, UNLESS theyre an owner. 
 </script>
 
 <Page>
@@ -78,7 +86,7 @@
 	</Breadcrumb>
 
 	<Card size="md" class="w-full flex">
-		<h3>Your Teams</h3>
+		<h3>Teams You Own</h3>
 
 		{#if loading}
 			<div class="p-4">Loading...</div>
@@ -96,7 +104,7 @@
 				<Card size="xl" class="flex w-full p-8 px-4 py-6 space-y-3">
 					{#if getTeamOwner(userTeam.TeamMembers) == $userStore?.DisplayName}
 						<center class="p-2">
-							<h4>Team {userTeam.Name}</h4>
+							<h4>{userTeam.Name}</h4>
 							<a href="/#/team/edit/{userTeam.Id}">Edit your team</a>
 						</center>
 					{:else}

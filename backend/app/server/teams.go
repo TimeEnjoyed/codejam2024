@@ -80,7 +80,7 @@ func (server *Server) GetAllTeams(ctx *gin.Context) {
 	}
 }
 
-func (server *Server) GetUserTeams(ctx *gin.Context) {
+func (server *Server) GetUserOwnedTeams(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
 
@@ -393,6 +393,6 @@ func (server *Server) SetupTeamRoutes() {
 		group.PUT("/edit/:teamid", server.UpdateTeam) // for admin to remove people
 		group.PUT("/team/:teamid/member/:memberid", server.RemoveTeamMember)
 	}
-	server.Gin.GET("/teams", server.GetUserTeams) // I think this works rofl
+	server.Gin.GET("/teams", server.GetUserOwnedTeams) // I think this works rofl
 	server.Gin.GET("/teams/browse", server.GetAllTeams)
 }
