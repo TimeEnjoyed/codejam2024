@@ -2,7 +2,7 @@
 	import Page from '../components/Page.svelte';
 	import { Avatar, Button, Breadcrumb, BreadcrumbItem, Card } from 'flowbite-svelte';
 	import CodeJamTeam from '../models/team';
-	import { getUserOwnedTeams } from '../services/services';
+	import { getUserTeams } from '../services/services';
 	import TeamMember from '../models/TeamMember';
 	import { onMount } from 'svelte';
 	import { loggedInStore, userStore } from '../stores/stores';
@@ -21,7 +21,7 @@
 
 	async function loadData() {
 		try {
-			const response = await getUserOwnedTeams();
+			const response = await getUserTeams();
 			userTeams = await response.json(); // Array of teams...
             console.log("userTeams: ", userTeams)
 		} catch (err) {

@@ -125,7 +125,7 @@ export async function getTeams() {
 }
 
 
-export async function getUserOwnedTeams(){
+export async function getUserTeams(){
     return fetch(baseApiUrl + "/teams");
 }
 
