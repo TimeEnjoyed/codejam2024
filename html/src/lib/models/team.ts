@@ -9,6 +9,7 @@ class CodeJamTeam {
     Technologies: string;
     Availability: string;
     Description: string;
+    CreatedOn: Date;
     InviteCode: string;
     TeamMembers: TeamMember[];
 
@@ -20,6 +21,7 @@ class CodeJamTeam {
         this.Technologies = '';
         this.Availability = '';
         this.Description = '';
+        this.CreatedOn = new Date;
         this.InviteCode = '';
         this.TeamMembers = [];
     }

@@ -6,16 +6,16 @@ import (
 )
 
 type DBTeam struct {
-	Id           pgtype.UUID      `db:"id"`
-	EventId      pgtype.UUID      `db:"event_id"`
-	Name         string           `db:"name"`
-	Visibility   string           `db:"visibility"`
-	Timezone     string           `db:"timezone"`
-	Technologies string           `db:"technologies"`
-	Availability string           `db:"availability"`
-	Description  string           `db:"description"`
-	CreatedOn    pgtype.Timestamp `db:"created_on"`
-	InviteCode   string           `db:"invite_code"`
+	Id           pgtype.UUID        `db:"id"`
+	EventId      pgtype.UUID        `db:"event_id"`
+	Name         string             `db:"name"`
+	Visibility   string             `db:"visibility"`
+	Timezone     string             `db:"timezone"`
+	Technologies string             `db:"technologies"`
+	Availability string             `db:"availability"`
+	Description  string             `db:"description"`
+	CreatedOn    pgtype.Timestamptz `db:"created_on"`
+	InviteCode   string             `db:"invite_code"`
 }
 
 type CreateTeamMember struct {
@@ -35,7 +35,7 @@ type DBTeamMember struct {
 	TeamId    pgtype.UUID      `db:"team_id"`
 	UserId    pgtype.UUID      `db:"user_id"`
 	TeamRole  string           `db:"team_role"`
-	CreatedOn pgtype.Timestamp `db:"created_on"`
+	CreatedOn pgtype.Timestamp `db:"user_created_on"`
 }
 //json:"createdOn-hidden"
 
@@ -126,33 +126,35 @@ func GetTeamByInvite(inviteCode string) (DBTeam, error) {
 }
 
 type DBTeamAndMember struct {
-	Id         	    pgtype.UUID  	 `db:"id"`
-	EventId      	pgtype.UUID      `db:"event_id"`
-	Name         	string           `db:"name"`
-	Visibility   	string           `db:"visibility"`
-	Timezone     	string           `db:"timezone"`
-	Technologies 	string           `db:"technologies"`
-	Availability 	string           `db:"availability"`
-	Description  	string           `db:"description"`
-	InviteCode   	string           `db:"invite_code"`
-	TeamId   		pgtype.UUID      `db:"team_id"`
-	UserId    		pgtype.UUID      `db:"user_id"`
-	TeamRole 	 	string           `db:"team_role"`
-	DisplayName 	string 			 `db:"display_name"`
-	AvatarId		string			 `db:"avatar_id"`
-	ServiceUserId 	string			 `db:"service_user_id"`
+	Id         	    pgtype.UUID  	    `db:"id"`
+	EventId      	pgtype.UUID         `db:"event_id"`
+	Name         	string              `db:"name"`
+	Visibility   	string              `db:"visibility"`
+	Timezone     	string              `db:"timezone"`
+	Technologies 	string              `db:"technologies"`
+	Availability 	string              `db:"availability"`
+	Description  	string              `db:"description"`
+	CreatedOn		pgtype.Timestamptz  `db:"team_created_on"`
+	InviteCode   	string              `db:"invite_code"`
+	TeamId   		pgtype.UUID         `db:"team_id"`
+	UserId    		pgtype.UUID         `db:"user_id"`
+	TeamRole 	 	string              `db:"team_role"`
+	DisplayName 	string 			    `db:"display_name"`
+	AvatarId		string	    	    `db:"avatar_id"`
+	ServiceUserId 	string		        `db:"service_user_id"`
 }
 
 type UITeam struct {
-	Id           pgtype.UUID      `db:"id"`
-	EventId      pgtype.UUID      `db:"event_id"`
-	Name         string           `db:"name"`
-	Visibility   string           `db:"visibility"`
-	Timezone     string           `db:"timezone"`
-	Technologies string           `db:"technologies"`
-	Availability string           `db:"availability"`
-	Description  string           `db:"description"`
-	InviteCode   string           `db:"invite_code"`
+	Id           pgtype.UUID        `db:"id"`
+	EventId      pgtype.UUID        `db:"event_id"`
+	Name         string             `db:"name"`
+	Visibility   string             `db:"visibility"`
+	Timezone     string             `db:"timezone"`
+	Technologies string             `db:"technologies"`
+	Availability string             `db:"availability"`
+	Description  string             `db:"description"`
+	CreatedOn 	 pgtype.Timestamptz `db:"created_on"`
+	InviteCode   string             `db:"invite_code"`
 }
 
 type UITeamMember struct {
@@ -193,6 +195,7 @@ func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
 					Technologies: item.Technologies,
 					Availability: item.Availability,
 					Description:  item.Description,
+					CreatedOn: 	  item.CreatedOn,
 					InviteCode:   item.InviteCode,
 				},
 				TeamMembers: []TeamMember{},
@@ -232,6 +235,7 @@ func GetTeams() (*[]TeamAndMember, error){
 			t.technologies,
 			t.availability,
 			t.description,
+            t.created_on AS team_created_on,
 			t.invite_code,
 			u.display_name,
 			u.avatar_id,
@@ -255,49 +259,83 @@ func GetTeams() (*[]TeamAndMember, error){
 
 	return &UITeamAndMember, err
 }
-
 func GetUserTeams(userId pgtype.UUID) (*[]TeamAndMember, error) {
-	result, err := GetRows[DBTeamAndMember](
-		`SELECT
-			t.id,
-			t.event_id, 
-			t.name, 
-			t.visibility,
-			t.timezone,
-			t.technologies,
-			t.availability,
-			t.description,
-			t.invite_code,
-			u.display_name,
-			u.avatar_id,
-			u.service_user_id,
-			tm.team_id,
-			tm.user_id,
-			tm.team_role
-		FROM teams t
-		INNER JOIN team_members tm ON (tm.team_id = t.id)
-		INNER JOIN users u ON (u.id = tm.user_id)
-		WHERE t.id IN (
-			SELECT t.id
-			FROM teams t
-			INNER JOIN team_members tm ON (tm.team_id = t.id)
-			WHERE tm.user_id = $1 AND tm.team_role = 'owner'
-		)
-		ORDER BY t.id`,
-		// The subquery retrieves the team IDs where the userId is the owner.
-		// The main query then uses these team IDs to select all the team members (both owners and non-owners)
-		userId)
-	if err != nil {
-		fmt.Println("that didn't work: database.GetUserTeams")
-		return nil, err
-	}
-	for _, t := range result {
-		fmt.Printf("%v\n", t)
-	}
-	UITeamAndMember := MapToTeamAndMember(result)
+    result, err := GetRows[DBTeamAndMember](
+        `SELECT
+            t.id AS team_id,
+            t.event_id,
+            t.name,
+            t.visibility,
+            t.timezone,
+            t.technologies,
+            t.availability,
+            t.description,
+            t.created_on AS team_created_on,
+            tm.team_role,
+            tm.created_on AS membership_created_on,
+            u.display_name,
+            u.avatar_id,
+            u.service_user_id,
+            u.role AS user_role
+        FROM teams t
+        INNER JOIN team_members tm ON tm.team_id = t.id
+        INNER JOIN users u ON u.id = tm.user_id
+        WHERE tm.user_id = $1
+        ORDER BY t.created_on`,
+        userId)
+    
+    if err != nil {
+        fmt.Println("that didn't work: database.GetUserTeams")
+        return nil, err
+    }
 
-	return &UITeamAndMember, err  // Try look at the table
+    UITeamAndMember := MapToTeamAndMember(result)
+
+    return &UITeamAndMember, err
 }
+
+// func GetUserTeams(userId pgtype.UUID) (*[]TeamAndMember, error) {
+// 	result, err := GetRows[DBTeamAndMember](
+// 		`SELECT
+// 			t.id,
+// 			t.event_id, 
+// 			t.name, 
+// 			t.visibility,
+// 			t.timezone,
+// 			t.technologies,
+// 			t.availability,
+// 			t.description,
+// 			t.invite_code,
+// 			u.display_name,
+// 			u.avatar_id,
+// 			u.service_user_id,
+// 			tm.team_id,
+// 			tm.user_id,
+// 			tm.team_role  
+// 		FROM teams t
+// 		INNER JOIN team_members tm ON (tm.team_id = t.id)
+// 		INNER JOIN users u ON (u.id = tm.user_id)
+// 		WHERE t.id IN (
+// 			SELECT t.id
+// 			FROM teams t
+// 			INNER JOIN team_members tm ON (tm.team_id = t.id)
+// 			WHERE tm.user_id = $1 AND tm.team_role = 'owner'
+// 		)
+// 		ORDER BY t.id`,
+// 		// The subquery retrieves the team IDs where the userId is the owner.
+// 		// The main query then uses these team IDs to select all the team members (both owners and non-owners)
+// 		userId)
+// 	if err != nil {
+// 		fmt.Println("that didn't work: database.GetUserTeams")
+// 		return nil, err
+// 	}
+// 	for _, t := range result {
+// 		fmt.Printf("%v\n", t)
+// 	}
+// 	UITeamAndMember := MapToTeamAndMember(result)
+
+// 	return &UITeamAndMember, err  // Try look at the table
+// }
 
 func UpdateTeam(team DBTeam) (DBTeam, error) {
 	event, err := GetRow[DBTeam](
