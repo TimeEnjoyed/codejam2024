@@ -228,8 +228,8 @@ func GetUserTeams(userId pgtype.UUID) (*[]UserTeam, error) {
 		INNER JOIN teams t ON t.id = mtm.team_id
 		INNER JOIN team_members tm ON t.id = tm.team_id
 		INNER JOIN users tmu ON tmu.id = tm.user_id
-		ORDER BY team_created_on
-		WHERE mtm.user_id = $1`,
+		WHERE mtm.user_id = $1
+		ORDER BY team_created_on`,
 		userId)
 	if err != nil {
 		logger.Error("failed to retrieve team info for user: %v", userId, err)
