@@ -228,6 +228,7 @@ func GetUserTeams(userId pgtype.UUID) (*[]UserTeam, error) {
 		INNER JOIN teams t ON t.id = mtm.team_id
 		INNER JOIN team_members tm ON t.id = tm.team_id
 		INNER JOIN users tmu ON tmu.id = tm.user_id
+		ORDER BY team_created_on
 		WHERE mtm.user_id = $1`,
 		userId)
 	if err != nil {
