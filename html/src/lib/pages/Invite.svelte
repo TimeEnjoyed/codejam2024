@@ -114,7 +114,7 @@
                             Join {teamData?.Name}
                         </Button>
 					{:else if isUserInTeam(teamMembers)}
-                        <p>Hi {$userStore?.DisplayName}, Looks like you're already in this team! Go <a href="/#/team/${teamId}">here</a> to view it.</p>
+                        <p>Hi {$userStore?.DisplayName}, Looks like you're already in this team! Go <a href="/#/team/{teamId}">here</a> to view it.</p>
 						<Button class="my-5" disabled>Already joined</Button>
 					{/if}
 				</div>
