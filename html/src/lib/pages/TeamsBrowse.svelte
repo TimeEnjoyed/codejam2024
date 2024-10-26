@@ -7,7 +7,7 @@
 	import CodeJamTeam from '../models/team';
 	import TeamMember from '../models/TeamMember';
 	import { getTeams, joinPublicTeam } from '../services/services';
-	import { activeUserStore, loggedInStore, userStore } from '../stores/stores';
+	import { loggedInStore, userStore } from '../stores/stores';
 	import { onMount } from 'svelte';
 
 	export const params: Record<string, never> = {};
@@ -19,6 +19,8 @@
 	let publicTeams: CodeJamTeam[] = [];
 	let clickOutsideModal = false;
 	let avatarUrls: Record<string, string> = {};
+    let currUserId: string | undefined = $userStore?.Id;
+    console.log("currUserId (teamsbrowse.svelte):", currUserId)
 
 	interface ErrorResponse {
 		Severity: string;
@@ -36,7 +38,6 @@
 	async function loadData() {
 		try {
 			const response = await getTeams();
-
 			allTeams = await response.json(); // Array of teams...
 			console.log('allTeams: ', allTeams);
 		} catch (err) {
@@ -65,8 +66,6 @@
 
 		await Promise.all(promises);
 	}
-
-	let currUserId: string | undefined = $userStore?.Id;
 
     // to tell if join button works or not:
 	function isUserInTeam(teamMembers: TeamMember[]): boolean {
