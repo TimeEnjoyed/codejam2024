@@ -5,62 +5,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type DBTeam struct {
-	Id           pgtype.UUID        `db:"id"`
-	EventId      pgtype.UUID        `db:"event_id"`
-	Name         string             `db:"name"`
-	Visibility   string             `db:"visibility"`
-	Timezone     string             `db:"timezone"`
-	Technologies string             `db:"technologies"`
-	Availability string             `db:"availability"`
-	Description  string             `db:"description"`
-	CreatedOn    pgtype.Timestamptz `db:"created_on"`
-	InviteCode   string             `db:"invite_code"`
-}
-
-type CreateTeamMember struct {
-	UserId   pgtype.UUID `db:"user_id"`
-	TeamId   pgtype.UUID `db:"team_id"`
-	TeamRole string      `db:"team_role"`
-}
-
-// has all the user info & role to pass to be read client-side
-type DBTeamMemberInfo struct {
-	DBUser          // embed the DBUser fields into the struct
-	TeamRole string `db:"team_role"`
-}
-
-// For team_member table.
-type DBTeamMember struct {
-	TeamId    pgtype.UUID      `db:"team_id"`
-	UserId    pgtype.UUID      `db:"user_id"`
-	TeamRole  string           `db:"team_role"`
-	CreatedOn pgtype.Timestamp `db:"user_created_on"`
-}
-//json:"createdOn-hidden"
-
-// type DBTeamAndMember struct {
-// 	DBTeam		// table teams
-// 	DBTeamMember DBTeamMember // table team_members
-// 	DisplayName string	`db:"display_name"` // table_user
-// }
-
-// type TeamAndMember struct {
-// 	DBTeam
-// 	TeamMembers	[]TeamMember
-// }
-// type TeamMember struct {
-// 	DBTeamMember 
-// 	DisplayName string
-// }
-
-type DBUserTeams struct {
-	DBTeam 
-	DisplayName	 	string		`db:"display_name"`
-	TeamRole		string 		`db:"team_role"`
-	AvatarId		string		`db:"avatar_id"`
-}
-
 func CreateTeam(team DBTeam) (pgtype.UUID, error) {
 	team, err := GetRow[DBTeam](
 		`INSERT INTO teams
@@ -95,6 +39,7 @@ func GetTeam(teamId pgtype.UUID) (DBTeam, error) {
 		teamId)
 	// `SELECT * FROM teams WHERE id = $1`,
 	// teamId)
+
 	if err != nil {
 		logger.Error("===DB/GetTeam error: ", err)
 		return DBTeam{}, err
@@ -103,6 +48,7 @@ func GetTeam(teamId pgtype.UUID) (DBTeam, error) {
 }
 
 func GetTeamByInvite(inviteCode string) (DBTeam, error) {
+	// "/invite/:invitecode"
 	team, err := GetRow[DBTeam](
 		`SELECT 
 			teams.id,
@@ -125,61 +71,9 @@ func GetTeamByInvite(inviteCode string) (DBTeam, error) {
 	return team, nil
 }
 
-type DBTeamAndMember struct {
-	Id         	    	pgtype.UUID  	    `db:"id"`
-	EventId      		pgtype.UUID         `db:"event_id"`
-	Name         		string              `db:"name"`
-	Visibility   		string              `db:"visibility"`
-	Timezone     		string              `db:"timezone"`
-	Technologies 		string              `db:"technologies"`
-	Availability 		string              `db:"availability"`
-	Description  		string              `db:"description"`
-	CreatedOn			pgtype.Timestamptz  `db:"team_created_on"`
-	InviteCode   		string              `db:"invite_code"`
-	MembershipCreatedOn pgtype.Timestamptz	`db:"membership_created_on"`
-	TeamId   			pgtype.UUID         `db:"team_id"`
-	UserId    			pgtype.UUID         `db:"user_id"`
-	TeamRole 	 		string              `db:"team_role"`
-	DisplayName 		string 			    `db:"display_name"`
-	AvatarId			string	    	    `db:"avatar_id"`
-	ServiceUserId 		string		        `db:"service_user_id"`
-}
-
-type UITeam struct {
-	Id           pgtype.UUID        `db:"id"`
-	EventId      pgtype.UUID        `db:"event_id"`
-	Name         string             `db:"name"`
-	Visibility   string             `db:"visibility"`
-	Timezone     string             `db:"timezone"`
-	Technologies string             `db:"technologies"`
-	Availability string             `db:"availability"`
-	Description  string             `db:"description"`
-	CreatedOn 	 pgtype.Timestamptz `db:"team_created_on"`
-	InviteCode   string             `db:"invite_code"`
-}
-
-type UITeamMember struct {
-	TeamId    			pgtype.UUID      	  `db:"team_id"`
-	UserId    			pgtype.UUID       	  `db:"user_id"`
-	MembershipCreatedOn	pgtype.Timestamptz	  `db:"membership_created_on"`
-	TeamRole  			string          	  `db:"team_role"`
-}
-
-type TeamMember struct {
-	UITeamMember 
-	DisplayName	    string 		`db:"display_name"`
-	AvatarId		string 		`db:"avatar_id"`
-	ServiceUserId 	string 		`db:"service_user_id"`
-}
-
-type TeamAndMember struct {
-	UITeam
-	TeamMembers	[]TeamMember
-}
-
-func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
+func MapToTeamAndMember(data []DBTeamAndTeamMember) []TeamAndMembers {
 	// instantiates array to store output, mapped by team id (uuid) for key
-	teamMap := make(map[pgtype.UUID]*TeamAndMember)
+	teamMap := make(map[pgtype.UUID]*TeamAndMembers)
 	for _, item := range data {
 		// Check if team already exists in the map. This map loopkup returns:
 		// 1) value associated with the key if it exsits
@@ -187,9 +81,9 @@ func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
 		team, ok := teamMap[item.TeamId]
 		if !ok {
 			// Create a new team
-			team = &TeamAndMember{
-				UITeam: UITeam {
-					Id: 		  item.Id,
+			team = &TeamAndMembers{
+				UITeam: UITeam{
+					Id:           item.Id,
 					EventId:      item.EventId,
 					Name:         item.Name,
 					Visibility:   item.Visibility,
@@ -197,7 +91,7 @@ func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
 					Technologies: item.Technologies,
 					Availability: item.Availability,
 					Description:  item.Description,
-					CreatedOn: 	  item.CreatedOn,
+					CreatedOn:    item.CreatedOn,
 					InviteCode:   item.InviteCode,
 				},
 				TeamMembers: []TeamMember{},
@@ -207,19 +101,19 @@ func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
 		// Add team member to TeamMembers slice
 		member := TeamMember{
 			UITeamMember: UITeamMember{
-				TeamId:					item.TeamId,
-				UserId: 				item.UserId,
-				MembershipCreatedOn: 	item.MembershipCreatedOn,
-				TeamRole: 				item.TeamRole,
+				TeamId:              item.TeamId,
+				UserId:              item.UserId,
+				MembershipCreatedOn: item.MembershipCreatedOn,
+				TeamRole:            item.TeamRole,
 			},
-			DisplayName: 	item.DisplayName,
-			AvatarId: 		item.AvatarId,
-			ServiceUserId:  item.ServiceUserId,
+			DisplayName:   item.DisplayName,
+			AvatarId:      item.AvatarId,
+			ServiceUserId: item.ServiceUserId,
 		}
 		team.TeamMembers = append(team.TeamMembers, member)
 	}
 	// Convert map back to slice
-	var result []TeamAndMember
+	var result []TeamAndMembers
 	for _, team := range teamMap {
 		result = append(result, *team)
 	}
@@ -227,8 +121,8 @@ func MapToTeamAndMember(data []DBTeamAndMember) []TeamAndMember{
 	return result
 }
 
-func GetTeams() (*[]TeamAndMember, error){
-	teamAndMember, err := GetRows[DBTeamAndMember]( // returns { team 1: { userA: {display_name: "momo"}}, team 1...}
+func GetTeams() (*[]TeamAndMembers, error) {
+	teamAndMember, err := GetRows[DBTeamAndTeamMember]( // returns { team 1: { userA: {display_name: "momo"}}, team 1...}
 		`SELECT 
 			t.id,
 			t.event_id, 
@@ -245,16 +139,17 @@ func GetTeams() (*[]TeamAndMember, error){
 			u.service_user_id,
 			tm.team_id,
 			tm.user_id,
+			tm.created_on AS membership_created_on,
 			tm.team_role
 			FROM teams t
 			INNER JOIN team_members tm ON (tm.team_id = t.id)
 			INNER JOIN users u ON (u.id = tm.user_id)
             ORDER BY t.id
 		`,
-		)
-		if err != nil {
-			return nil, err
-		}
+	)
+	if err != nil {
+		return nil, err
+	}
 	for _, t := range teamAndMember {
 		fmt.Printf("%v\n", t)
 	}
@@ -262,10 +157,55 @@ func GetTeams() (*[]TeamAndMember, error){
 
 	return &UITeamAndMember, err
 }
-func GetUserTeams(userId pgtype.UUID) (*[]TeamAndMember, error) {
-	// this gets all teams a user is in, regardless of team role.
-    result, err := GetRows[DBTeamAndMember](
-        `SELECT
+
+func MapToUserTeamAndMember(userTeams *[]UserTeamAndMembers) []UserTeam {
+	// initialize a json dictionary
+	teamMap := make(map[pgtype.UUID]*UserTeam)
+
+	// loop through all the rows from the query.
+	// UserTeams aka []UserTeam is a single row from query.
+	for _, ut := range *userTeams {
+		// If team doesn't exist in map, create it
+		if _, exists := teamMap[ut.Id]; !exists {
+			teamMap[ut.Id] = &UserTeam{
+				Id:            ut.Id,
+				EventId:       ut.EventId,
+				Name:          ut.Name,
+				Description:   ut.Description,
+				Visibility:    ut.Visibility,
+				Technologies:  ut.Technologies,
+				Availability:  ut.Availability,
+				TeamCreatedOn: ut.TeamCreatedOn,
+				InviteCode:    ut.InviteCode,
+				TeamMembers:   []UserTeamMember{},
+			}
+		}
+
+		// create a member
+		TeamMember := UserTeamMember{
+			UserId:        ut.UserId,
+			DisplayName:   ut.DisplayName,
+			TeamRole:      ut.TeamRole,
+			AvatarId:      ut.AvatarId,
+			ServiceUserId: ut.ServiceUserId,
+			UserCreatedOn: ut.MembershipCreatedOn,
+		}
+
+		// add member to teamMap dictionary
+		teamMap[ut.Id].TeamMembers = append(teamMap[ut.Id].TeamMembers, TeamMember)
+	}
+
+	// Convert map to slice
+	teams := make([]UserTeam, 0, len(teamMap))
+	for _, team := range teamMap {
+		teams = append(teams, *team)
+	}
+	return teams
+}
+
+func GetUserTeams(userId pgtype.UUID) (*[]UserTeam, error) {
+	result, err := GetRows[UserTeamAndMembers](
+		`SELECT 
             t.id,
             t.event_id,
             t.name,
@@ -280,27 +220,22 @@ func GetUserTeams(userId pgtype.UUID) (*[]TeamAndMember, error) {
 			tm.user_id, 
             tm.team_role,
             tm.created_on AS membership_created_on,
-            u.display_name,
-            u.avatar_id,
-            u.service_user_id
-        FROM teams t
-        INNER JOIN team_members tm ON tm.team_id = t.id
-        INNER JOIN users u ON u.id = tm.user_id
-        WHERE tm.user_id = $1
-        ORDER BY t.created_on`,
-        userId)
-    
-    if err != nil {
-        fmt.Println("that didn't work: database.GetUserTeams")
-        return nil, err
-    }
-
-    UITeamAndMember := MapToTeamAndMember(result)
-		for _, t := range result {
-		fmt.Printf("%v\n", t)
+			tmu.display_name,
+            tmu.avatar_id,
+            tmu.service_user_id,
+			mtm.team_role AS current_user_role
+		FROM team_members mtm
+		INNER JOIN teams t ON t.id = mtm.team_id
+		INNER JOIN team_members tm ON t.id = tm.team_id
+		INNER JOIN users tmu ON tmu.id = tm.user_id
+		WHERE mtm.user_id = $1`,
+		userId)
+	if err != nil {
+		logger.Error("failed to retrieve team info for user: %v", userId, err)
 	}
 
-    return &UITeamAndMember, err
+	UIUserTeamAndMember := MapToUserTeamAndMember(&result)
+	return &UIUserTeamAndMember, err
 }
 
 func UpdateTeam(team DBTeam) (DBTeam, error) {
@@ -319,7 +254,7 @@ func UpdateTeam(team DBTeam) (DBTeam, error) {
 }
 
 type DBTeamInviteCode struct {
-	InviteCode   string		`db:"invite_code"`
+	InviteCode string `db:"invite_code"`
 }
 
 func GetTeamInviteCode(teamId pgtype.UUID) (inviteCode DBTeamInviteCode, err error) {
@@ -334,13 +269,12 @@ func GetTeamInviteCode(teamId pgtype.UUID) (inviteCode DBTeamInviteCode, err err
 	return teamInviteCode, err
 }
 
-
 // fields: userid, teamid, role
-// called at server/teams.go createTeam & when someone clicks "join team" 
+// called at server/teams.go createTeam & when someone clicks "join team"
 // DONT MESS WITH BELOW. IT WORKS.
 func AddTeamMember(userId pgtype.UUID, teamUUID pgtype.UUID, role string) (userID pgtype.UUID, err error) {
 	// userId prints something like: {[22 162 173 240 222 76 79 42 174 62 196 207 243 22 25 78] true}
-	
+
 	teamMember, err := GetRow[CreateTeamMember](
 		`INSERT INTO team_members
 			(user_id, team_id, team_role)
@@ -354,7 +288,7 @@ func AddTeamMember(userId pgtype.UUID, teamUUID pgtype.UUID, role string) (userI
 }
 
 func RemoveTeamMember(teamId pgtype.UUID, userId pgtype.UUID) {
-	
+
 }
 
 func GetMembersByTeamId(teamId pgtype.UUID) (*[]DBTeamMemberInfo, error) {

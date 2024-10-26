@@ -12,7 +12,7 @@
 	// TODO:
 	// create edit button if user owns team
 	// -- can remove users and edit form inputs
-    // -- add invite link to c/p
+	// -- add invite link to c/p
 
 	let loading: boolean = true;
 	let error: string | null = null;
@@ -23,18 +23,18 @@
 		try {
 			const response = await getUserTeams();
 			userTeams = await response.json(); // Array of teams...
-            console.log("userTeams: ", userTeams)
+			console.log('userTeams: ', userTeams);
 		} catch (err) {
 			error = `Failed to load team data: ${err}`;
 			console.error(err);
 		} finally {
 			loading = false;
 		}
-        loadAvatarUrls();
+		loadAvatarUrls();
 	}
 
 	async function getAvatarUrl(member: TeamMember): Promise<string> {
-        console.log(member.AvatarId)
+		console.log(member.AvatarId);
 		let ext = member.AvatarId.startsWith('a_') ? '.gif' : '.png';
 		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarId}${ext}`;
 	}
@@ -56,7 +56,7 @@
 		});
 
 		await Promise.all(promises);
-    }
+	}
 
 	function getTeamOwner(teamMembers: TeamMember[]): string {
 		let owner = teamMembers.find((member) => member.TeamRole === 'owner');
@@ -71,12 +71,12 @@
 		loadData();
 	});
 
-// Currently, I'm querying every team where the loggedin user is the owner, and separating all the members. 
-// I'm also checking client side whether the loggined user is the owner or not. 
-// -- If it's an owner, it shows an edit button. 
+	// Currently, I'm querying every team where the loggedin user is the owner, and separating all the members.
+	// I'm also checking client side whether the loggined user is the owner or not.
+	// -- If it's an owner, it shows an edit button.
 
-// Following, I think I should show a list of all the teams the loggedin user is only a member in.
-// This means querying for every team where the user.id matches the tm.userId of any team, UNLESS theyre an owner. 
+	// Following, I think I should show a list of all the teams the loggedin user is only a member in.
+	// This means querying for every team where the user.id matches the tm.userId of any team, UNLESS theyre an owner.
 </script>
 
 <Page>

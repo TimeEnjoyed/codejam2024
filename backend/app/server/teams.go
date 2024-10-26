@@ -95,10 +95,11 @@ func (server *Server) GetUserTeams(ctx *gin.Context) {
 		ctx.Status(http.StatusInternalServerError)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, teams)
 }
 
-// stepp 4: GET team info
+
 // purpose is to construct the DBTeamMemberInfo
 func (server *Server) GetTeamInfo(id pgtype.UUID) (*GetTeamResponse, error) {
 
@@ -308,12 +309,12 @@ func (server *Server) RemoveTeamMember(ctx *gin.Context) {
 func (server *Server) MemberJoin(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
-	//fmt.Println("userID = ", userId)
 
 	if userId == nil {
 		ctx.Status(http.StatusUnauthorized)
 		return
 	}
+
 	strUserId := userId.(string)
 	uuidUserId := convert.StringToUUID(strUserId)
 
@@ -323,9 +324,11 @@ func (server *Server) MemberJoin(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	// teamId prints: {cc457e3e-210a-4d5d-83d8-0899426dfc93}
 	uuidTeamId := convert.StringToUUID(teamId.TeamId)
 	teamInfo, err := server.GetTeamInfo(uuidTeamId)
+	
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return 

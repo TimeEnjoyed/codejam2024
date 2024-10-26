@@ -68,6 +68,7 @@
 
 	let currUserId: string | undefined = $userStore?.Id;
 
+    // to tell if join button works or not:
 	function isUserInTeam(teamMembers: TeamMember[]): boolean {
 		for (let teamMember of teamMembers) {
 			if (teamMember.UserId == currUserId) {
@@ -77,6 +78,7 @@
 		return false;
 	}
 
+    // to display the owner the team
 	function getTeamOwner(teamMembers: TeamMember[]): string {
 		let owner = teamMembers.find((member) => member.TeamRole === 'owner');
 		if (owner) {
@@ -180,7 +182,7 @@
 				</Card>
 			{:else}
 				<div>
-					Looks like you don't have any teams! Go to <a href="/#/">browse teams</a> to join one!
+					There's no existing teams. Be the first to <a href="/#/teams/create">create</a> one! 
 				</div>
 			{/each}
 		{/if}
