@@ -25,6 +25,16 @@
 	let error: string | null = null;
 	let teamCreated: boolean = false; // Reactivate variable to track if team was just created
 
+    // to display the owner the team
+	function getTeamOwner(teamMembers: TeamMember[]): string {
+		let owner = teamMembers.find((member) => member.TeamRole === 'owner');
+		if (owner) {
+			return owner.DisplayName;
+		} else {
+			return 'No owner found.';
+		}
+	}
+
 	async function loadData(id: string) {
 		try {
 			const response = await getTeamById(id);
@@ -97,6 +107,9 @@
 					<h4>Team {teamData.Name}</h4>
 					<span><small>(<a href="/#/team/edit/{teamData.Id}">edit</a>)</small></span>
 				</center>
+                <span>
+                    <b>Owner: </b>{getTeamOwner(teamMembers)}
+                </span>
 				<span>
 					<b>Team Members: </b>
 					{#each teamMembers as member}
