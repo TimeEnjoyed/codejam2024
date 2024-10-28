@@ -7,7 +7,7 @@
 	import CodeJamTeam from '../models/team';
 	import { getTeamById } from '../services/services';
 	import toast from 'svelte-french-toast';
-
+    import {userStore} from "./../stores/stores";
 	interface Params {
 		// This is what the params is because you pass an id with type of string.
 		id: string;
@@ -105,7 +105,10 @@
 			<Card size="xl" class="flex w-full p-8 px-4 py-6 space-y-3">
 				<center class="p-2">
 					<h4>Team {teamData.Name}</h4>
+                    {#if $userStore?.DisplayName == getTeamOwner(teamMembers)}
+
 					<span><small>(<a href="/#/team/edit/{teamData.Id}">edit</a>)</small></span>
+                    {/if}
 				</center>
                 <span>
                     <b>Owner: </b>{getTeamOwner(teamMembers)}
