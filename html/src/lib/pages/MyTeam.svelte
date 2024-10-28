@@ -6,6 +6,7 @@
 	import CodeJamEvent from '../models/event';
 	import CodeJamTeam from '../models/team';
 	import { getTeamById } from '../services/services';
+	import toast from 'svelte-french-toast';
 
 	interface Params {
 		// This is what the params is because you pass an id with type of string.
@@ -52,6 +53,23 @@
 		}
 		console.log('onMount teamCreated: ', teamCreated);
 	});
+
+	let url: string = '';
+
+	$: if (teamData?.Id) {
+		url = `localhost:8080/#/team/edit/${teamData.Id}`;
+	}
+
+	function copyToClipboard(): void {
+		navigator.clipboard
+			.writeText(url)
+			.then(() => {
+				toast.success('Copied to clipboard');
+			})
+			.catch((err: Error) => {
+				toast.error(`Failed to copy: ${err}`);
+			});
+	}
 </script>
 
 <!-- TODO: Create Owner, Member, and Public View -->
@@ -77,7 +95,7 @@
 			<Card size="xl" class="flex w-full p-8 px-4 py-6 space-y-3">
 				<center class="p-2">
 					<h4>Team {teamData.Name}</h4>
-					<span><small>(edit)</small></span>
+					<span><small>(<a href="/#/team/edit/{teamData.Id}">edit</a>)</small></span>
 				</center>
 				<span>
 					<b>Team Members: </b>
@@ -99,7 +117,20 @@
 				<span>
 					<b>Description: </b>{teamData.Description}
 				</span>
-				<p>Invite Link: <a href="/#/team/invite/{teamData.InviteCode}">here </a></p>
+				<span>
+					<b>Invite Link: </b>
+				</span>
+				<div>
+					<textarea
+						class="border border-slate-300 bg-white text-gray-400 rounded-md w-full resize-none"
+						bind:value={url}
+						readonly
+					></textarea>
+					<button
+						class="my-2 border border-slate-300 bg-white text-gray-400 p-2"
+						on:click={copyToClipboard}>Copy Text</button
+					>
+				</div>
 			</Card>
 		{/if}
 	</Card>

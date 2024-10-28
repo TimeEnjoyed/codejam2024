@@ -6,7 +6,7 @@ import {
 } from "../stores/stores";
 import CodeJamEvent from "../models/event";
 import CodeJamTeam from "../models/team";
-import type {ActiveUser, User} from "../models/user";
+import type { ActiveUser, User } from "../models/user";
 
 // This shouldn't ever need to be set since dev and prod environments will just use relative endpoints
 export let baseApiUrl: string = "";
@@ -32,12 +32,12 @@ export async function getUser() {
         .then((response) => {
             if (response.status === 401) {
                 userStore.set(null);
-                activeUserStore.set(<ActiveUser>{user: null, loggedIn: false});
+                activeUserStore.set(<ActiveUser>{ user: null, loggedIn: false });
             } else {
                 response.json()
                     .then((data) => {
                         userStore.set(data);
-                        activeUserStore.set(<ActiveUser>{user: data as User, loggedIn: true})
+                        activeUserStore.set(<ActiveUser>{ user: data as User, loggedIn: true })
                     })
                     .catch((err) => {
                         console.error("error deserializing user", err);
@@ -58,7 +58,7 @@ export async function logout() {
     return fetch(baseApiUrl + "/user/logout")
         .then(() => {
             userStore.set(null);
-            activeUserStore.set(<ActiveUser>{user: null, loggedIn: false});
+            activeUserStore.set(<ActiveUser>{ user: null, loggedIn: false });
         })
         .catch((err) => {
             console.error("Logout error", err);
@@ -125,7 +125,7 @@ export async function getTeams() {
 }
 
 
-export async function getUserTeams(){
+export async function getUserTeams() {
     return fetch(baseApiUrl + "/teams");
 }
 
@@ -179,5 +179,4 @@ export async function removeMemberFromTeam(teamId: string, memberId: string) {
 async function initialLoad() {
     await Promise.all([getUser(), getActiveEvent(), getEventStatuses()]);
 }
-
 initialLoad();
