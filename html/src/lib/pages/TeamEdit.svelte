@@ -121,7 +121,6 @@
 		await Promise.all(promises);
 
     }
-    
 
 	async function loadData(id: string) {
 		try {
@@ -150,7 +149,22 @@
 	$: if (params) {
 		loadData(params.id);     
 	}
+	let url: string = '';
 
+	$: if (teamData?.Id) {
+		url = `localhost:8080/#/team/invite/${teamData.InviteCode}`;
+	}
+
+	function copyToClipboard(): void {
+		navigator.clipboard
+			.writeText(url)
+			.then(() => {
+				toast.success('Copied to clipboard');
+			})
+			.catch((err: Error) => {
+				toast.error(`Failed to copy: ${err}`);
+			});
+	}
 </script>
 
 <Page>
@@ -204,10 +218,20 @@
 					{/if}
 				</Button>
 			</div>
-            <span class="my-5">
-                <!-- TODO: update link when live -->
-                <b>Invite Link:</b> https://localhost:8080/#/team/invite/{teamInviteCode}
+            <span>
+                <b>Invite Link: </b>
             </span>
+            <div>
+                <textarea
+                    class="border border-slate-300 bg-white text-gray-400 rounded-md w-full resize-none"
+                    bind:value={url}
+                    readonly
+                ></textarea>
+                <button
+                    class="my-2 border border-slate-300 bg-white text-gray-400 p-2"
+                    on:click={copyToClipboard}>Copy Text</button
+                >
+            </div>
 
             <h2>Team Members</h2>
 			<Table>

@@ -67,7 +67,7 @@
 	let url: string = '';
 
 	$: if (teamData?.Id) {
-		url = `localhost:8080/#/team/edit/${teamData.Id}`;
+		url = `localhost:8080/#/team/invite/${teamData.InviteCode}`;
 	}
 
 	function copyToClipboard(): void {
