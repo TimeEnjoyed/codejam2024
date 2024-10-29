@@ -19,7 +19,7 @@
 	let publicTeams: CodeJamTeam[] = [];
 	let clickOutsideModal = false;
 	let avatarUrls: Record<string, string> = {};
-    let currUserId: string | undefined = $userStore?.Id;
+    $: currUserId = $userStore?.Id;
     console.log("currUserId (teamsbrowse.svelte):", currUserId)
 
 	interface ErrorResponse {
@@ -163,7 +163,7 @@
 					{:else if $loggedInStore}
 						{#if !isUserInTeam(Team.TeamMembers)}
                             <Button
-								on:click={() =>
+								on:click={() =>   
 									joinPublicTeam(Team.Id).then((resTeamId) => {
 										if (isValidTeamId(resTeamId)) {
 											toast.success('Successfully joined team');

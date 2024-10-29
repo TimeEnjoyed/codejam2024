@@ -34,7 +34,6 @@
 	}
 
 	async function getAvatarUrl(member: TeamMember): Promise<string> {
-		console.log(member.AvatarId);
 		let ext = member.AvatarId.startsWith('a_') ? '.gif' : '.png';
 		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarId}${ext}`;
 	}

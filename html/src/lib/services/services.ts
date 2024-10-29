@@ -167,12 +167,33 @@ export async function joinPublicTeam(teamId: string) {
 
 export async function removeMemberFromTeam(teamId: string, memberId: string) {
     // DELETE request to remove a member from a specific team
-    return await fetch(baseApiUrl + `/team/${teamId}/member/${memberId}`, {
+
+    const response = await fetch(baseApiUrl + `/team/${teamId}/member/${memberId}`, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
         },
+        body: JSON.stringify({ teamId, memberId })
     });
+
+    // Check if response status is OK (successful deletion)
+    if (response.ok) {
+        // Log the full response for debugging purposes
+        console.log("Full response:", response);
+
+        // Check if the response has JSON content
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            const jsonResponse = await response.json();
+            console.log("JSON Response:", jsonResponse); // Log the JSON response
+            return jsonResponse;
+        }
+
+        console.log("Response has no JSON content, returning empty object.");
+        return {}; // Return an empty object if no JSON response is provided
+    } else {
+        throw new Error(`Failed to delete member: ${response.status} ${response.statusText}`);
+    }
 }
 
 // Always call at startup to get the initial states

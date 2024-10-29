@@ -38,7 +38,7 @@
 	let teamAvailability: string = '';
 	let teamTechnologies: string = '';
 	let teamDescription: string = '';
-    let teamInviteCode: string = '';
+	let teamInviteCode: string = '';
 
 	let loading: boolean = true;
 	let formData: CodeJamTeam | null = null;
@@ -80,47 +80,43 @@
 		}
 	}
 
-	function removeMember(teamId: string, memberUserId: string) {
+	async function removeMember(teamId: string, memberUserId: string): Promise<string> {
 		if (confirm('Are you sure you want to remove this team member?')) {
-			// Call API to remove member
-			removeMemberFromTeam(teamId, memberUserId)
-				.then(() => {
-					// Update formData to reflect changes
-					teamMembers = teamMembers.filter((member) => member.UserId !== memberUserId);
-					toast.success('Member removed successfully');
-				})
-				.catch((err) => {
-					toast.error('Failed to remove member');
-					console.error(err);
-				});
+			try {
+				// Call API to remove member
+				await removeMemberFromTeam(teamId, memberUserId);
+				return teamId;
+			} catch (err) {
+				toast.error('Failed to remove member');
+				console.error(err);
+				return '';
+			}
 		}
+		return '';
 	}
 
 	async function getAvatarUrl(member: TeamMember): Promise<string> {
-        console.log("member: ", member)
 		let ext = member.AvatarId.startsWith('a_') ? '.gif' : '.png';
-        console.log("meember.AvatarUrl: ", member.AvatarId)
 		return `https://cdn.discordapp.com/avatars/${member.ServiceUserId}/${member.AvatarId}${ext}`;
 	}
 
-    async function loadAvatarUrls() {
+	async function loadAvatarUrls() {
 		let members: TeamMember[] = [];
 
-        members.push(...teamMembers);
+		members.push(...teamMembers);
 
 		console.log(`MEMBERS: ${members}`);
 
 		const promises = members.map(async (member) => {
 			const url = await getAvatarUrl(member);
 
-            // for this page, we use Id instead of UserId because it queries the User table, which uses 'Id'
-            // may need to make a new class/model if we want to fix the error: Property 'Id' does not exist on type 'TeamMember'.
+			// for this page, we use Id instead of UserId because it queries the User table, which uses 'Id'
+			// may need to make a new class/model if we want to fix the error: Property 'Id' does not exist on type 'TeamMember'.
 			avatarUrls[member.Id] = url;
 		});
 
 		await Promise.all(promises);
-
-    }
+	}
 
 	async function loadData(id: string) {
 		try {
@@ -128,7 +124,7 @@
 				response.json().then((data) => {
 					formData = data as CodeJamTeam;
 					teamData = data.Team;
-                    teamInviteCode = data.Team.InviteCode;
+					teamInviteCode = data.Team.InviteCode;
 					teamMembers = data.TeamMembers;
 					teamEvent = data.Event;
 					teamName = data.Team.Name;
@@ -136,8 +132,8 @@
 					teamAvailability = data.Team.Availability;
 					teamTechnologies = data.Team.Technologies;
 					teamDescription = data.Team.Description;
-                    loadAvatarUrls();
-                });
+					loadAvatarUrls();
+				});
 			});
 		} catch (err) {
 			error = `Failed to load team data: ${err}`;
@@ -147,7 +143,7 @@
 	}
 
 	$: if (params) {
-		loadData(params.id);     
+		loadData(params.id);
 	}
 	let url: string = '';
 
@@ -218,22 +214,22 @@
 					{/if}
 				</Button>
 			</div>
-            <span>
-                <b>Invite Link: </b>
-            </span>
-            <div>
-                <textarea
-                    class="border border-slate-300 bg-white text-gray-400 rounded-md w-full resize-none"
-                    bind:value={url}
-                    readonly
-                ></textarea>
-                <button
-                    class="my-2 border border-slate-300 bg-white text-gray-400 p-2"
-                    on:click={copyToClipboard}>Copy Text</button
-                >
-            </div>
+			<span>
+				<b>Invite Link: </b>
+			</span>
+			<div>
+				<textarea
+					class="border border-slate-300 bg-white text-gray-400 rounded-md w-full resize-none"
+					bind:value={url}
+					readonly
+				></textarea>
+				<button
+					class="my-2 border border-slate-300 bg-white text-gray-400 p-2"
+					on:click={copyToClipboard}>Copy Text</button
+				>
+			</div>
 
-            <h2>Team Members</h2>
+			<h2>Team Members</h2>
 			<Table>
 				<TableHead>
 					<TableHeadCell>Avatar</TableHeadCell>
@@ -247,15 +243,24 @@
 					{#each formData.TeamMembers as Member}
 						<TableBodyRow>
 							<TableBodyCell>
-                                <Avatar src={avatarUrls[Member.Id]} title={Member.DisplayName} />
-                            </TableBodyCell>
+								<Avatar src={avatarUrls[Member.Id]} title={Member.DisplayName} />
+							</TableBodyCell>
 							<TableBodyCell>{Member.DisplayName}</TableBodyCell>
 							<TableBodyCell>{Member.TeamRole}</TableBodyCell>
 							<TableBodyCell>
 								{#if Member.TeamRole !== 'owner'}
 									<Button
 										on:click={() =>
-											teamData?.Id && Member.Id && removeMember(teamData.Id, Member.Id)}
+											teamData?.Id &&
+											Member.Id &&
+											removeMember(teamData.Id, Member.Id).then((resTeamId) => {
+												if (resTeamId) {
+													toast.success("You've successfully removed a member.");
+													window.location.reload();
+												} else {
+													toast.error('Action was canceled or failed.');
+												}
+											})}
 										class="btn-remove text-red-500 hover:text-red-700"
 										color="light"
 									>

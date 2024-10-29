@@ -288,8 +288,17 @@ func AddTeamMember(userId pgtype.UUID, teamUUID pgtype.UUID, role string) (userI
 	return teamMember.UserId, err
 }
 
-func RemoveTeamMember(teamId pgtype.UUID, userId pgtype.UUID) {
-
+func RemoveTeamMember(teamId pgtype.UUID, userId pgtype.UUID) (DBTeamMember, error) {
+	deletedMember, err := GetRow[DBTeamMember](`
+		DELETE FROM team_members
+		WHERE team_id = $1 AND user_id = $2
+		RETURNING team_id, user_id, team_role, created_on AS user_created_on`,
+		teamId, userId)
+	if err != nil {
+		logger.Error("Failed to remove team member: %v", err)
+		return DBTeamMember{}, err
+	}
+	return deletedMember, nil
 }
 
 func GetMembersByTeamId(teamId pgtype.UUID) (*[]DBTeamMemberInfo, error) {

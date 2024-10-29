@@ -30,18 +30,23 @@ type CreateTeamRequest struct {
 }
 
 type GetTeamResponse struct {
-	Team    	*database.DBTeam
-	Event   	*database.DBEvent
+	Team        *database.DBTeam
+	Event       *database.DBEvent
 	TeamMembers *[]database.DBTeamMemberInfo // array(slice) of a struct
 }
 
 type InvitePayload struct {
-	TeamId 		string	`json:"teamId"`
-	InviteCode	string 	`json:"inviteCode"`
+	TeamId     string `json:"teamId"`
+	InviteCode string `json:"inviteCode"`
 }
 
 type JoinPayload struct {
-	TeamId		string 	`json:"teamId"`
+	TeamId string `json:"teamId"`
+}
+
+type MemberPayload struct {
+	TeamId   string `json:"teamId"`
+	MemberId string `json:"memberId"`
 }
 
 func MD5HashCode(teamName string) (string, error) {
@@ -88,7 +93,7 @@ func (server *Server) GetUserTeams(ctx *gin.Context) {
 		ctx.Status(http.StatusNotFound)
 		return
 	}
-	strUserId := userId.(string) 
+	strUserId := userId.(string)
 
 	teams, err := database.GetUserTeams(convert.StringToUUID(strUserId))
 	if err != nil {
@@ -98,7 +103,6 @@ func (server *Server) GetUserTeams(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, teams)
 }
-
 
 // purpose is to construct the DBTeamMemberInfo
 func (server *Server) GetTeamInfo(id pgtype.UUID) (*GetTeamResponse, error) {
@@ -130,7 +134,7 @@ func (server *Server) GetTeamInfo(id pgtype.UUID) (*GetTeamResponse, error) {
 	teamResponse.Team = &team
 	teamResponse.Event = &event
 	teamResponse.TeamMembers = teamMembers
-	
+
 	return &teamResponse, nil
 }
 
@@ -191,7 +195,7 @@ func (server *Server) CreateTeam(ctx *gin.Context) {
 	// Step 4: Post Team Data API (TWO PARTS 1) create team 2) add team members)
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
-    if userId == nil {
+	if userId == nil {
 		ctx.Status(http.StatusUnauthorized)
 		return
 	}
@@ -230,7 +234,7 @@ func (server *Server) CreateTeam(ctx *gin.Context) {
 	team.InviteCode = md5code
 
 	fmt.Printf("%+v", team)
-	
+
 	// INSERTS TEAM into DB
 	// PART 1/2 DONE
 	teamUUID, err := database.CreateTeam(team)
@@ -239,7 +243,7 @@ func (server *Server) CreateTeam(ctx *gin.Context) {
 		ctx.Status(http.StatusBadRequest)
 		return
 	}
-	fmt.Println(convert.StringToUUID(strUserId), teamUUID,)
+	fmt.Println(convert.StringToUUID(strUserId), teamUUID)
 
 	// PART 2/2 DONE
 	// construct TeamMember
@@ -263,7 +267,7 @@ func (server *Server) UpdateTeam(ctx *gin.Context) {
 	fmt.Println(ctx.Request.Body)
 	if userId != nil {
 		var team database.DBTeam
-		err := ctx.ShouldBindJSON(&team)  //"message incoming data to this struct"
+		err := ctx.ShouldBindJSON(&team) //"message incoming data to this struct"
 		if err != nil {
 			logger.Error("UpdateEvent Request ShouldBindJSON error: %v", err)
 			ctx.Status(http.StatusBadRequest)
@@ -288,22 +292,25 @@ func (server *Server) RemoveTeamMember(ctx *gin.Context) {
 		ctx.Status(http.StatusUnauthorized)
 		return
 	}
-	strUserId := userId.(string)
-	uuidUserId := convert.StringToUUID(strUserId)
 
-	var teamId JoinPayload
+	var MemberPayload MemberPayload
 
-	if err := ctx.ShouldBindJSON(&teamId); err != nil {
+	if err := ctx.ShouldBindJSON(&MemberPayload); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// teamId prints: {cc457e3e-210a-4d5d-83d8-0899426dfc93}
-	uuidTeamId := convert.StringToUUID(teamId.TeamId)
-	fmt.Println("user id: ", uuidUserId, "==== teamd id:", uuidTeamId)
 
-	//_, err := database.RemoveTeamMember(teamId, userId)
-	ctx.JSON(http.StatusOK, "pass")
+	uuidTeamId := convert.StringToUUID(MemberPayload.TeamId)
+	uuidMemberId := convert.StringToUUID(MemberPayload.MemberId)
 
+	removedMember, err := database.RemoveTeamMember(uuidTeamId, uuidMemberId)
+	if err != nil {
+		fmt.Println("Error removing team member: ", err)
+	}
+
+	strTeamId := convert.UUIDToString(removedMember.TeamId)
+
+	ctx.JSON(http.StatusOK, strTeamId)
 }
 
 func (server *Server) MemberJoin(ctx *gin.Context) {
@@ -328,17 +335,17 @@ func (server *Server) MemberJoin(ctx *gin.Context) {
 	// teamId prints: {cc457e3e-210a-4d5d-83d8-0899426dfc93}
 	uuidTeamId := convert.StringToUUID(teamId.TeamId)
 	teamInfo, err := server.GetTeamInfo(uuidTeamId)
-	
+
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return 
+		return
 	}
 
 	// verifies team is public
 	var isPublic string = teamInfo.Team.Visibility
 	if isPublic == "private" {
 		ctx.Status(http.StatusForbidden)
-		return 
+		return
 	}
 	_, err = database.AddTeamMember(uuidUserId, uuidTeamId, "member")
 	if err != nil {
@@ -351,7 +358,7 @@ func (server *Server) MemberJoin(ctx *gin.Context) {
 
 func (server *Server) MemberInvite(ctx *gin.Context) {
 	session := sessions.Default(ctx)
-	userId:= session.Get("userId")
+	userId := session.Get("userId")
 
 	var payload InvitePayload
 	// bind the message context to the structure, and do an error check
@@ -369,7 +376,7 @@ func (server *Server) MemberInvite(ctx *gin.Context) {
 	dbInviteCode, err := database.GetTeamInviteCode(uuidTeamId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, inviteCode)
-	} 
+	}
 	fmt.Println("server dbInviteCode: ", dbInviteCode)
 	if inviteCode != dbInviteCode.InviteCode {
 		fmt.Println("invalid request")
@@ -382,7 +389,6 @@ func (server *Server) MemberInvite(ctx *gin.Context) {
 	}
 }
 
-
 func (server *Server) SetupTeamRoutes() {
 	group := server.Gin.Group("/team")
 	{
@@ -394,7 +400,7 @@ func (server *Server) SetupTeamRoutes() {
 		group.GET("/invite/:invitecode", server.GetTeamInfoByInviteCode)
 
 		group.PUT("/edit/:teamid", server.UpdateTeam) // for admin to remove people
-		group.PUT("/team/:teamid/member/:memberid", server.RemoveTeamMember)
+		group.DELETE("/:teamid/member/:memberid", server.RemoveTeamMember)
 	}
 	server.Gin.GET("/teams", server.GetUserTeams) // I think this works rofl
 	server.Gin.GET("/teams/browse", server.GetAllTeams)
