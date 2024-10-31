@@ -19,8 +19,8 @@
 	let publicTeams: CodeJamTeam[] = [];
 	let clickOutsideModal = false;
 	let avatarUrls: Record<string, string> = {};
-    $: currUserId = $userStore?.Id;
-    console.log("currUserId (teamsbrowse.svelte):", currUserId)
+	$: currUserId = $userStore?.Id;
+	console.log('currUserId (teamsbrowse.svelte):', currUserId);
 
 	interface ErrorResponse {
 		Severity: string;
@@ -39,6 +39,9 @@
 		try {
 			const response = await getTeams();
 			allTeams = await response.json(); // Array of teams...
+			if (allTeams == null) {
+				allTeams = [];
+			}
 			console.log('allTeams: ', allTeams);
 		} catch (err) {
 			error = `Failed to load team data: ${err}`;
@@ -67,7 +70,7 @@
 		await Promise.all(promises);
 	}
 
-    // to tell if join button works or not:
+	// to tell if join button works or not:
 	function isUserInTeam(teamMembers: TeamMember[]): boolean {
 		for (let teamMember of teamMembers) {
 			if (teamMember.UserId == currUserId) {
@@ -77,7 +80,7 @@
 		return false;
 	}
 
-    // to display the owner the team
+	// to display the owner the team
 	function getTeamOwner(teamMembers: TeamMember[]): string {
 		let owner = teamMembers.find((member) => member.TeamRole === 'owner');
 		if (owner) {
@@ -162,8 +165,8 @@
 						</Modal>
 					{:else if $loggedInStore}
 						{#if !isUserInTeam(Team.TeamMembers)}
-                            <Button
-								on:click={() =>   
+							<Button
+								on:click={() =>
 									joinPublicTeam(Team.Id).then((resTeamId) => {
 										if (isValidTeamId(resTeamId)) {
 											toast.success('Successfully joined team');
@@ -181,7 +184,7 @@
 				</Card>
 			{:else}
 				<div>
-					There's no existing teams. Be the first to <a href="/#/teams/create">create</a> one! 
+					There's no existing teams. Be the first to <a href="/#/teams/create">create</a> one!
 				</div>
 			{/each}
 		{/if}
