@@ -240,18 +240,21 @@ func GetUserTeams(userId pgtype.UUID) (*[]UserTeam, error) {
 }
 
 func UpdateTeam(team DBTeam) (DBTeam, error) {
-	event, err := GetRow[DBTeam](
+	updatedTeam, err := GetRow[DBTeam](
 		`UPDATE teams
             SET name=$2,
                 visibility=$3,
 				timezone=$4,
 				technologies=$5,
 				availability=$6,
-				description=$7,
+				description=$7
 		WHERE id=$1
 		RETURNING *`,
 		team.Id, team.Name, team.Visibility, team.Timezone, team.Technologies, team.Availability, team.Description)
-	return event, err
+	if err != nil {
+		return DBTeam{}, fmt.Errorf("failed to update team with ID %v: %w", team.Id, err)
+	}
+	return updatedTeam, err
 }
 
 type DBTeamInviteCode struct {

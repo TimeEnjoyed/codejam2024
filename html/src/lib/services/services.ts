@@ -120,6 +120,30 @@ export async function postTeam(team: CodeJamTeam) {
         });
 }
 
+export async function putTeam(team: CodeJamTeam) { 
+    console.log("baseApiUrl:", baseApiUrl);
+    console.log("team.Id before URL construction:", team.Id);
+
+    if (team.Id == undefined) {
+        console.log("team.Id is undefined:", team.Id);
+    } else {
+        console.log("team.Id is:", team.Id);
+    }
+    let teamid: string = team.Id
+    // Construct the URL using template literals and encodeURIComponent for safety
+    const url = `${baseApiUrl}/team/edit/${teamid}`;
+    console.log("Constructed PUT request URL:", url);
+
+    const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(team)
+    });
+    return response
+}
+
 export async function getTeams() {
     return await fetch(baseApiUrl + "/teams/browse")
 }

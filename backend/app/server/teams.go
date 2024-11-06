@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"net/http"
+	"net/http">
 
 	"codejam.io/database"
 	"github.com/emicklei/pgtalk/convert"
@@ -264,21 +264,23 @@ func (server *Server) CreateTeam(ctx *gin.Context) {
 func (server *Server) UpdateTeam(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
-	fmt.Println(ctx.Request.Body)
+
 	if userId != nil {
 		var team database.DBTeam
-		err := ctx.ShouldBindJSON(&team) //"message incoming data to this struct"
+		err := ctx.ShouldBindJSON(&team) // "message incoming data to this struct"
+		
 		if err != nil {
 			logger.Error("UpdateEvent Request ShouldBindJSON error: %v", err)
 			ctx.Status(http.StatusBadRequest)
 			return
 		}
-		team, err = database.UpdateTeam(team)
+
+		updatedTeam, err := database.UpdateTeam(team)
 		if err != nil {
-			logger.Error("Error calling database.UpdateEvent: %v", err)
+			logger.Error("Error calling database.UpdateTeam: %v", err)
 			ctx.Status(http.StatusInternalServerError)
 		} else {
-			ctx.JSON(http.StatusOK, team)
+			ctx.JSON(http.StatusOK, updatedTeam)
 		}
 	} else {
 		ctx.Status(http.StatusUnauthorized)

@@ -1,19 +1,11 @@
 <script lang="ts">
-	import Page from '../components/Page.svelte';
-	import { Avatar, Breadcrumb, BreadcrumbItem, Button, Card, Input } from 'flowbite-svelte';
-	import CodeJamTeam from '../models/team';
-	import { activeEventStore } from '../stores/stores';
-	import { getTeamById, postTeam, removeMemberFromTeam } from '../services/services';
-	import Helper from 'flowbite-svelte/Helper.svelte';
-	import Radio from 'flowbite-svelte/Radio.svelte';
-	import Spinner from 'flowbite-svelte/Spinner.svelte';
-	import Textarea from 'flowbite-svelte/Textarea.svelte';
-	import Form from '../components/Form.svelte';
-	import FormField from '../components/FormField.svelte';
-	import toast from 'svelte-french-toast';
-	import type CodeJamEvent from '../models/event';
-	import type TeamMember from '../models/TeamMember';
 	import {
+		Avatar,
+		Breadcrumb,
+		BreadcrumbItem,
+		Button,
+		Card,
+		Input,
 		Table,
 		TableBody,
 		TableBodyCell,
@@ -21,6 +13,19 @@
 		TableHead,
 		TableHeadCell
 	} from 'flowbite-svelte';
+	import Helper from 'flowbite-svelte/Helper.svelte';
+	import Radio from 'flowbite-svelte/Radio.svelte';
+	import Spinner from 'flowbite-svelte/Spinner.svelte';
+	import Textarea from 'flowbite-svelte/Textarea.svelte';
+	import toast from 'svelte-french-toast';
+	import Form from '../components/Form.svelte';
+	import FormField from '../components/FormField.svelte';
+	import Page from '../components/Page.svelte';
+	import type CodeJamEvent from '../models/event';
+	import CodeJamTeam from '../models/team';
+	import CodeJamTeamExtended from '../models/teamExtended';
+	import type TeamMember from '../models/TeamMember';
+	import { getTeamById, putTeam, removeMemberFromTeam } from '../services/services';
 
 	export let params: any; // set by svelte-spa-router
 
@@ -28,7 +33,7 @@
 	// Show each team member with a delete button next to username
 	// Successfully submit the form (update query to database.)
 
-	let teamData: CodeJamTeam | null = null;
+	let formData: CodeJamTeamExtended;
 	let teamMembers: TeamMember[] = [];
 	let teamEvent: CodeJamEvent | null = null;
 	let avatarUrls: Record<string, string> = {};
@@ -39,44 +44,34 @@
 	let teamTechnologies: string = '';
 	let teamDescription: string = '';
 	let teamInviteCode: string = '';
+	let teamTeamMembers: TeamMember[] = [];
 
 	let loading: boolean = true;
-	let formData: CodeJamTeam | null = null;
 	let isSaving: boolean = false;
-	let teamCreated: boolean = false;
 	let error: string | null = null;
+
+	let formDataTeamId: string = '';
+	let formDataTeamInviteCode: string = '';
 
 	let clearErrors: () => {};
 	let parseResponse: (response: object) => {};
 
-	function saveForm() {
+	async function saveForm() {
 		if (formData !== null) {
 			isSaving = true;
-			clearErrors();
 
-			formData.EventId = $activeEventStore?.Id || '';
+			const formDataTeam = formData.Team;
+			formDataTeamId = formData.Team.Id;
 
-			postTeam(formData)
-				.then((response) => {
-					response
-						.json()
-						.then((data) => {
-							// Team creation successful, letting svelte page know:
-							teamCreated = true;
-							// Stepp 1: GET team info
-							// this uses routes.ts --> MyTeam.svelte page
-							window.location.href = `/#/team/${data.id}`;
-							toast.success("You've successfully edited a team");
-							isSaving = false;
-						})
-						.catch(() => {
-							isSaving = false;
-						});
-				})
-				.catch((err) => {
-					console.error('Error saving event', err);
-					isSaving = false;
-				});
+			const updatedTeam = await putTeam(formDataTeam);
+			if (updatedTeam.ok) {
+				toast.success("You've successfully edited team info.");
+				window.location.href = `/#/team/edit/${formDataTeamId}`;
+			} else {
+				toast.error('Failed to save team');
+				console.error(`response status: ${updatedTeam.status}`);
+			}
+			isSaving = false;
 		}
 	}
 
@@ -115,26 +110,39 @@
 			avatarUrls[member.Id] = url;
 		});
 
-		await Promise.all(promises);
+		return Promise.all(promises);
 	}
 
 	async function loadData(id: string) {
 		try {
-			getTeamById(params.id).then((response) => {
-				response.json().then((data) => {
-					formData = data as CodeJamTeam;
-					teamData = data.Team;
-					teamInviteCode = data.Team.InviteCode;
-					teamMembers = data.TeamMembers;
-					teamEvent = data.Event;
-					teamName = data.Team.Name;
-					teamVisibility = data.Team.Visibility;
-					teamAvailability = data.Team.Availability;
-					teamTechnologies = data.Team.Technologies;
-					teamDescription = data.Team.Description;
-					loadAvatarUrls();
-				});
-			});
+			const response = await getTeamById(params.id);
+
+			if (!response.ok) {
+				loading = false;
+				console.error(`Failed to get team information: ${response.status}`);
+				return;
+			}
+
+			// You can do this all in where you actually do the fetch/services.ts
+
+			const data: CodeJamTeamExtended = await response.json();
+
+			let teamData = data.Team;
+			formData = data as CodeJamTeamExtended;
+
+			teamData = data.Team;
+			teamName = data.Team.Name;
+			teamInviteCode = data.Team.InviteCode;
+			teamMembers = data.TeamMembers;
+			teamEvent = data.Event;
+			teamName = data.Team.Name;
+
+			teamVisibility = data.Team.Visibility;
+			teamAvailability = data.Team.Availability;
+			teamTechnologies = data.Team.Technologies;
+			teamDescription = data.Team.Description;
+			teamTeamMembers = data.TeamMembers;
+			await loadAvatarUrls();
 		} catch (err) {
 			error = `Failed to load team data: ${err}`;
 		} finally {
@@ -145,11 +153,14 @@
 	$: if (params) {
 		loadData(params.id);
 	}
+
 	let url: string = '';
 
-	$: if (teamData?.Id) {
-		url = `localhost:8080/#/team/invite/${teamData.InviteCode}`;
+	$: if (formDataTeamId) {
+		url = `localhost:8080/#/team/invite/${formDataTeamInviteCode}`;
 	}
+
+	$: formData;
 
 	function copyToClipboard(): void {
 		navigator.clipboard
@@ -169,10 +180,9 @@
 		<BreadcrumbItem href="/#/team">Team Options</BreadcrumbItem>
 		<BreadcrumbItem>Edit Team</BreadcrumbItem>
 	</Breadcrumb>
-	<Card size="xl" class="w-full">
-		<div class="flex flex-row gap-8 my-8"></div>
+	<Card size="xl" class="w-full mb-10">
+		<div class="flex flex-row gap-8"></div>
 		{#if loading}
-			{console.log(formData, 'line 107')}
 			<div class="p-4">Loading...</div>
 		{:else if error}
 			<div class="p-4 text-red-500">{error}</div>
@@ -180,29 +190,31 @@
 			<div class="flex flex-col gap-8 my-8">
 				<Form bind:clearErrors bind:parseResponse>
 					<FormField label="Team Name:" name="TeamName">
-						<Input bind:value={teamName}></Input>
+						<Input bind:value={formData.Team.Name}></Input>
 					</FormField>
 					<div>
-						<Radio name="team-type" bind:group={teamVisibility} value="public">Public Team</Radio>
+						<Radio name="team-type" bind:group={formData.Team.Visibility} value="public"
+							>Public Team</Radio
+						>
 						<Helper class="ml-6 ">(If you want your team to be searchable.)</Helper>
 					</div>
 					<div>
-						<Radio name="team-type" bind:group={teamVisibility} value="private">Private Team</Radio>
+						<Radio name="team-type" bind:group={formData.Team.Visibility} value="private"
+							>Private Team</Radio
+						>
 						<Helper class="ml-6">(Your team will be invite only)</Helper>
 					</div>
 
 					<FormField label="Your general availability:" name="TeamAvailability">
-						<Input bind:value={teamAvailability}></Input>
+						<Input bind:value={formData.Team.Availability}></Input>
 					</FormField>
 
-					<!-- <MultiSelect id="multi-close" items={languages} bind:value={teamTechnologies} /> -->
 					<FormField label="Your technologies:" name="TeamTechnologies">
-						<Input bind:value={teamTechnologies}></Input>
+						<Input bind:value={formData.Team.Technologies}></Input>
 					</FormField>
 
 					<FormField label="What do you want out of this team?" name="Description">
-						<!-- <Label for="aboutTextArea">What do you want out of this team?</Label> -->
-						<Textarea bind:value={teamDescription} />
+						<Textarea bind:value={formData.Team.Description} />
 					</FormField>
 				</Form>
 
@@ -228,7 +240,6 @@
 					on:click={copyToClipboard}>Copy Text</button
 				>
 			</div>
-
 			<h2>Team Members</h2>
 			<Table>
 				<TableHead>
@@ -240,7 +251,7 @@
 					</TableHeadCell>
 				</TableHead>
 				<TableBody tableBodyClass="divide-y">
-					{#each formData.TeamMembers as Member}
+					{#each teamTeamMembers as Member}
 						<TableBodyRow>
 							<TableBodyCell>
 								<Avatar src={avatarUrls[Member.Id]} title={Member.DisplayName} />
@@ -251,9 +262,9 @@
 								{#if Member.TeamRole !== 'owner'}
 									<Button
 										on:click={() =>
-											teamData?.Id &&
+											formData.Team.Id &&
 											Member.Id &&
-											removeMember(teamData.Id, Member.Id).then((resTeamId) => {
+											removeMember(formData.Team.Id, Member.Id).then((resTeamId) => {
 												if (resTeamId) {
 													toast.success("You've successfully removed a member.");
 													window.location.reload();
