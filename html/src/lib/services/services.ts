@@ -46,12 +46,19 @@ export async function getUser() {
         });
 }
 
-export async function putProfile(user: User): Promise<Response> {
-    return fetch(baseApiUrl + "/user/",
-        {
-            method: "PUT",
-            body: JSON.stringify(user)
-        });
+interface PutProfileRequest {
+    DisplayName : string,
+}
+export async function putProfile(displayName: string): Promise<Response> {
+    const requestInit : RequestInit = {
+        method: 'PUT',
+        body: JSON.stringify(
+            <PutProfileRequest>{
+                DisplayName: displayName
+            }
+        )
+    }
+    return await fetch(`${baseApiUrl}/user/profile/`, requestInit);
 }
 
 export async function logout() {

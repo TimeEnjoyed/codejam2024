@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Page from '../components/Page.svelte';
+	import Page from '../../components/Page.svelte';
 	import { onMount } from 'svelte';
 	import {
 		Breadcrumb,
@@ -11,11 +11,11 @@
 		Spinner,
 		Textarea
 	} from 'flowbite-svelte';
-	import { getActiveEvent, getEvent, putEvent } from '../services/services'
-	import { eventStatusStore } from '../stores/stores';
-	import CodeJamEvent from '../models/event';
-	import FormField from '../components/FormField.svelte';
-	import Form from '../components/Form.svelte';
+	import { getActiveEvent, getEvent, putEvent } from '../../services/services'
+	import { eventStatusStore } from '../../stores/stores';
+	import CodeJamEvent from '../../models/event';
+	import FormField from '../../components/FormField.svelte';
+	import Form from '../../components/Form.svelte';
 
 	export let params: any; // set by svelte-spa-router
 

@@ -60,6 +60,8 @@ func (server *Server) StartServer() {
 	server.SetupUserRoutes()
 	server.SetupEventRoutes()
 	server.SetupTeamRoutes()
+	server.SetupAdminUserRoutes()
+
 	server.SetupStaticRoutes()
 
 	// Start the server...

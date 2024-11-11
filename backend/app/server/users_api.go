@@ -10,9 +10,8 @@ import (
 	"strings"
 )
 
-func validateUser(user *database.DBUser, response *models.FormResponse) {
-	// Title is required
-	if strings.Trim(user.DisplayName, " ") == "" {
+func validateDisplayName(displayName string, response *models.FormResponse) {
+	if displayName == "" {
 		response.AddError("DisplayName", "required")
 	}
 }
@@ -21,36 +20,59 @@ func (server *Server) GetUser(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
 	if userId != nil {
-		dbUser := database.GetUser(convert.StringToUUID(userId.(string)))
+		dbUser, err := database.GetUser(convert.StringToUUID(userId.(string)))
+		if err != nil {
+			logger.Error("GetUser: %v, %v", userId, err)
+			ctx.Status(http.StatusInternalServerError)
+			return
+		}
 		ctx.JSON(http.StatusOK, dbUser)
 		return
 	}
 	ctx.Status(http.StatusUnauthorized)
 }
 
-func (server *Server) PutUser(ctx *gin.Context) {
+type PutProfileRequest struct {
+	DisplayName string
+}
+
+func (server *Server) PutProfile(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	userId := session.Get("userId")
 	if userId != nil {
-		var user database.DBUser
-		err := ctx.ShouldBindJSON(&user)
+		user, err := database.GetUser(convert.StringToUUID(userId.(string)))
+		if err != nil {
+			logger.Error("PutProfile: GetUser error: %v", err)
+			ctx.Status(http.StatusInternalServerError)
+			return
+		}
+
+		// admin display name lock prevents a user from changing it
+		if user.LockDisplayName {
+			logger.Info("DisplayName Locked")
+			ctx.Status(http.StatusForbidden)
+			return
+		}
+
+		var request PutProfileRequest
+		err = ctx.ShouldBindJSON(&request)
 		if err != nil {
 			ctx.Status(http.StatusBadRequest)
 			return
 		}
 
 		response := models.NewFormResponse()
-		validateUser(&user, &response)
+		request.DisplayName = strings.Trim(request.DisplayName, " ")
 
 		// Perform validation
-		validateUser(&user, &response)
+		validateDisplayName(request.DisplayName, &response)
 		if len(response.Errors) > 0 {
 			logger.Error("Validation Error: %v+", user)
 			ctx.JSON(http.StatusBadRequest, response)
 			return
 		}
 
-		user.Id = convert.StringToUUID(userId.(string))
+		user.DisplayName = request.DisplayName
 		_, err = database.UpdateUser(user)
 		if err != nil {
 			logger.Error("Error calling database.UpdateEvent: %v", err)
@@ -88,7 +110,8 @@ func (server *Server) SetupUserRoutes() {
 	group := server.Gin.Group("/user")
 	{
 		group.GET("/", server.GetUser)
-		group.PUT("/", server.PutUser)
+		group.PUT("/profile", server.PutProfile)
 		group.GET("/logout", server.Logout)
 	}
+
 }
