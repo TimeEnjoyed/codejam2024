@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"net/http">
+	"net/http"
 
 	"codejam.io/database"
 	"github.com/emicklei/pgtalk/convert"
