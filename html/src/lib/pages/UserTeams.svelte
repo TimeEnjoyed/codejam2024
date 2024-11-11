@@ -65,11 +65,11 @@
 			return 'No owner found.';
 		}
 	}
-
+    let userDisplayName = $userStore?.DisplayName
 	onMount(() => {
 		loadData();
 	});
-
+    $: userDisplayName;
 	// Currently, I'm querying every team where the loggedin user is the owner, and separating all the members.
 	// I'm also checking client side whether the loggined user is the owner or not.
 	// -- If it's an owner, it shows an edit button.
