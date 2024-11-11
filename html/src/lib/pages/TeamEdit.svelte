@@ -39,6 +39,7 @@
 	let avatarUrls: Record<string, string> = {};
 
 	let teamName: string = '';
+    let teamId: string = '';
 	let teamVisibility: string = '';
 	let teamAvailability: string = '';
 	let teamTechnologies: string = '';
@@ -131,6 +132,7 @@
 			formData = data as CodeJamTeamExtended;
 
 			teamData = data.Team;
+            teamId = data.Team.Id;
 			teamName = data.Team.Name;
 			teamInviteCode = data.Team.InviteCode;
 			teamMembers = data.TeamMembers;
@@ -156,8 +158,9 @@
 
 	let url: string = '';
 
-	$: if (formDataTeamId) {
-		url = `localhost:8080/#/team/invite/${formDataTeamInviteCode}`;
+	$: if (teamId) {
+        console.log("does thissssssss...")
+		url = `localhost:8080/#/team/invite/${teamInviteCode}`;
 	}
 
 	$: formData;
