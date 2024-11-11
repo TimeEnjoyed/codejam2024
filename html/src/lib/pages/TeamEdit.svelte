@@ -22,7 +22,6 @@
 	import FormField from '../components/FormField.svelte';
 	import Page from '../components/Page.svelte';
 	import type CodeJamEvent from '../models/event';
-	import CodeJamTeam from '../models/team';
 	import CodeJamTeamExtended from '../models/teamExtended';
 	import type TeamMember from '../models/TeamMember';
 	import { getTeamById, putTeam, removeMemberFromTeam } from '../services/services';
@@ -39,7 +38,7 @@
 	let avatarUrls: Record<string, string> = {};
 
 	let teamName: string = '';
-    let teamId: string = '';
+	let teamId: string = '';
 	let teamVisibility: string = '';
 	let teamAvailability: string = '';
 	let teamTechnologies: string = '';
@@ -132,7 +131,7 @@
 			formData = data as CodeJamTeamExtended;
 
 			teamData = data.Team;
-            teamId = data.Team.Id;
+			teamId = data.Team.Id;
 			teamName = data.Team.Name;
 			teamInviteCode = data.Team.InviteCode;
 			teamMembers = data.TeamMembers;
@@ -159,7 +158,7 @@
 	let url: string = '';
 
 	$: if (teamId) {
-        console.log("does thissssssss...")
+		console.log('does thissssssss...');
 		url = `localhost:8080/#/team/invite/${teamInviteCode}`;
 	}
 
