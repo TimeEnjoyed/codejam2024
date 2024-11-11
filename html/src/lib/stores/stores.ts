@@ -8,11 +8,13 @@ export const activeContent = writable('');
 /**
  * Deprecated - use activeUserStore.user instead
  */
+
 export const userStore = writable<User | null>(null);
 
 /**
  * Deprecated - use activeUserStore.loggedIn instead
  */
+
 export const loggedInStore = derived(userStore, (userData) => userData != null);
 
 /**

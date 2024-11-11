@@ -11,7 +11,7 @@ import {eventStatusStore} from "../../stores/stores";
 
 
 let events : Array<CodeJamEvent> = new Array<CodeJamEvent>();
-let statuses = null
+let statuses: any = null  // Implicit any type?
 
 function editEvent(eventId: string) {
     window.location.href = '/#/admin/event/' + eventId;
@@ -25,7 +25,7 @@ function getEventStatus(statusId: number): string {
         if (event !== null) {
             return event.Title;
         }
-        return '';
+        return ''; // Should this be unindented? (In the outter scope) - Mysty {See line 20 : string}
     }
 }
 
@@ -50,7 +50,7 @@ onMount(() => {
 <Page>
 
     <Card size="xl" class="w-full">
-        <h2>My Events</h2>
+        <h2>Events</h2>
         <div class="flex flex-col gap-8 my-8">
         </div>
 

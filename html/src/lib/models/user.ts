@@ -5,12 +5,13 @@ export interface User {
     ServiceName : string;
     ServiceUserId: string;
     ServiceUserName: string;
-    AvatarUrl: string;
+    AvatarId: string;
     AccountStatus: string;
     LockDisplayName: boolean;
 }
 
 export interface ActiveUser {
     user : User | null;
-    loggedIn : boolean;
+    loggedIn : boolean; 
+    userId : User["Id"] | null;
 }

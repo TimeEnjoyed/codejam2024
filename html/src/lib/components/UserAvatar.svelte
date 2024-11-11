@@ -8,8 +8,12 @@
 </script>
 
 
-{#if user && user.AvatarUrl}
-    <Avatar border src="https://cdn.discordapp.com/avatars/{user.ServiceUserId}/{user.AvatarUrl}.png?size=48" {...$$restProps}></Avatar>
+{#if user && user.AvatarId}
+    {#if user.AvatarId && user.AvatarId.startsWith("a_")}
+    <Avatar border src="https://cdn.discordapp.com/avatars/{user.ServiceUserId}/{user.AvatarId}.gif?size=48" {...$$restProps} />
+    {:else}
+    <Avatar border src="https://cdn.discordapp.com/avatars/{user.ServiceUserId}/{user.AvatarId}.png?size=48" {...$$restProps} />
+    {/if}
 {:else}
-    <Avatar border {...$$restProps}></Avatar>
+    <Avatar border {...$$restProps} />
 {/if}

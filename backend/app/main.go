@@ -1,14 +1,20 @@
 package main
 
 import (
+
 	"codejam.io/config"
 	"codejam.io/database"
+
 	//"codejam.io/logging"
+	"flag"
+
 	"codejam.io/server"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	debugArg := flag.Bool("debug", false, "Enable debug mode.")
+	flag.Parse()
 	// TODO setup logger
 
 	// Disables the debug logging... Comment this out to enable debug logging for GIN
@@ -30,6 +36,7 @@ func main() {
 
 	server := server.Server{
 		Config: *config,
+		Debug: *debugArg,
 	}
 	server.StartServer()
 }

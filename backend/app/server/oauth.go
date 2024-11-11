@@ -1,6 +1,11 @@
 package server
 
 import (
+	"fmt"
+	"net/http"
+	"os"
+	"strings"
+
 	"codejam.io/database"
 	"codejam.io/integrations"
 	"github.com/emicklei/pgtalk/convert"
@@ -8,13 +13,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 	githubOAuth "golang.org/x/oauth2/github"
-	"net/http"
-	"os"
-	"strings"
 )
+
+type StateData struct {
+	Token    string
+	Redirect string
+}
 
 // SetupOAuth initializes the OAuth provider specified in the application config.
 func (server *Server) SetupOAuth() {
+	if server.Debug {
+		logger.Warn("Debug mode is set. No OAuth Providers are set!")
+		return
+	}
+
 	var endpoint oauth2.Endpoint
 
 	switch strings.ToLower(server.Config.OAuth.Provider) {
@@ -40,13 +52,92 @@ func (server *Server) SetupOAuth() {
 }
 
 func (server *Server) GetOAuthRedirect(ctx *gin.Context) {
-	url := server.OAuth.AuthCodeURL(ctx.Request.Header.Get("Referer"))
+	session := sessions.Default(ctx)
+	token, err := GenerateToken(16)
+
+	if err != nil {
+		ctx.String(500, "Internal Server Error")
+	}
+
+	redirect := ctx.Query("redirect")
+	if redirect == "" {
+		redirect = "/"
+	}
+
+	if !strings.HasPrefix(redirect, "/") {
+		redirect = "/"
+	} else if strings.HasPrefix(redirect, "/oauth") {
+		redirect = "/"
+	} else {
+		redirect = fmt.Sprintf("/#%s", redirect)
+	}
+
+	state := StateData{Token: token, Redirect: redirect}
+	session.Set("state", state)
+	err = session.Save()
+
+	if err != nil {
+		logger.Error("Error saving session: %v", err)
+	}
+
+	if server.Debug {
+		ctx.Redirect(http.StatusFound, "/oauth/debug-login")
+		return
+	}
+
+	url := server.OAuth.AuthCodeURL(token)
 	ctx.Redirect(http.StatusFound, url)
+}
+
+func (server *Server) GetDebugSession(ctx *gin.Context) {
+	redir := ctx.Query("state")
+
+	dbUser := database.CreateUser("discord", "0", "DebugCow", "")
+	session := sessions.Default(ctx)
+	session.Set("userId", convert.UUIDToString(dbUser.Id))
+	session.Set("displayName", dbUser.DisplayName)
+
+	err := session.Save()
+
+	if err != nil {
+		logger.Error("Error saving debug session: %v", err)
+	}
+
+	ctx.Redirect(http.StatusFound, redir)
 }
 
 func (server *Server) GetOAuthCallback(ctx *gin.Context) {
 	authCode := ctx.Query("code")
-	redir := ctx.Query("state")
+	stateCode := ctx.Query("state")
+	fmt.Println(stateCode)
+
+	if len(stateCode) == 0 {
+		ctx.String(400, "Bad Request: Missing State Value.")
+		return
+	}
+
+	session := sessions.Default(ctx)
+	stateI := session.Get("state")
+
+	session.Clear()
+	session.Save()
+
+	var stateData *StateData
+	// give the stateI a defined type/struct of stateData instead of interface{}/any:
+	stateData, ok := stateI.(*StateData)
+	if !ok {
+		ctx.String(400, "Bad Request: Invalid State Data.")
+		return
+	}
+
+	if stateData.Token != stateCode {
+		logger.Error("Invalid state token provided.")
+		ctx.String(400, "Bad Request: Invalid State Code Provided.")
+		return
+	}
+
+	redir := stateData.Redirect
+
 	token, err := server.OAuth.Exchange(oauth2.NoContext, authCode)
 	if err != nil {
 		// todo - can any of these be handled?
@@ -57,8 +148,7 @@ func (server *Server) GetOAuthCallback(ctx *gin.Context) {
 	integrationName := strings.ToLower(server.Config.OAuth.Provider)
 	providerUser := integrations.GetUser(integrationName, token.AccessToken)
 	if providerUser != nil {
-		dbUser := database.CreateUser(integrationName, providerUser.UserId, providerUser.ServiceUserName, providerUser.AvatarUrl)
-		session := sessions.Default(ctx)
+		dbUser := database.CreateUser(integrationName, providerUser.UserId, providerUser.ServiceUserName, providerUser.AvatarId)
 		session.Set("userId", convert.UUIDToString(dbUser.Id))
 		session.Set("displayName", dbUser.DisplayName)
 		err = session.Save()
@@ -80,5 +170,6 @@ func (server *Server) SetupOAuthRoutes() {
 	{
 		group.GET("/redirect", server.GetOAuthRedirect)
 		group.GET("/callback", server.GetOAuthCallback)
+		group.GET("/debug-login", server.GetDebugSession)
 	}
 }

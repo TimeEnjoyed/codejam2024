@@ -1,18 +1,19 @@
 package database
 
 import (
+	"fmt"
 	"github.com/emicklei/pgtalk/convert"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type DBUser struct {
-	Id              pgtype.UUID      `db:"id" `
+	Id          pgtype.UUID     	   `db:"id"`
 	ServiceName     string           `db:"service_name"`
 	ServiceUserId   string           `db:"service_user_id"`
 	ServiceUserName string           `db:"service_user_name"`
 	Role            string           `db:"role"`
 	DisplayName     string           `db:"display_name"`
-	AvatarUrl       *string          `db:"avatar_url"`
+	AvatarId        *string          `db:"avatar_id"`
 	AccountStatus   string           `db:"account_status"`
 	LockDisplayName bool             `db:"lock_display_name"`
 	CreatedOn       pgtype.Timestamp `db:"created_on" json:"-"`
@@ -23,16 +24,17 @@ const (
 	Admin = "ADMIN"
 )
 
-func CreateUser(serviceName string, serviceUserId string, serviceDisplayName string, avatarUrl string) DBUser {
+func CreateUser(serviceName string, serviceUserId string, serviceDisplayName string, avatarId string) DBUser {
 	user, err := GetRow[DBUser](
-		`INSERT INTO users (service_name, service_user_id, service_user_name, display_name, avatar_url)
-		 VALUES ($1, $2, $3, $3, $4)
-		 ON CONFLICT (service_name, service_user_id)
-		 DO UPDATE
-		 SET service_user_name = $3, avatar_url = $4
-		 RETURNING *`,
-		serviceName, serviceUserId, serviceDisplayName, avatarUrl)
+		`INSERT INTO users (service_name, service_user_id, service_user_name, display_name, avatar_id)
+		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (service_name, service_user_id)
+		DO UPDATE
+		SET service_user_name = $3, avatar_id = $5
+		RETURNING service_name, service_user_id, display_name, avatar_id`,
+		serviceName, serviceUserId, serviceDisplayName, avatarId)
 	if err != nil {
+		fmt.Println(serviceName, serviceUserId, serviceDisplayName, avatarId)
 		logger.Error("error getting user: %v", err)
 	}
 	return user
@@ -40,10 +42,9 @@ func CreateUser(serviceName string, serviceUserId string, serviceDisplayName str
 
 func GetUser(userId pgtype.UUID) (DBUser, error) {
 	user, err := GetRow[DBUser](
-		`SELECT 
-           *
-		 FROM users 
-		 WHERE id = $1`,
+		`SELECT *
+		FROM users 
+		WHERE id = $1`,
 		userId)
 	if err != nil {
 		logger.Error("error getting user: id: %s, error: %v", convert.UUIDToString(userId), err)
@@ -54,9 +55,9 @@ func GetUser(userId pgtype.UUID) (DBUser, error) {
 func UpdateUser(user DBUser) (DBUser, error) {
 	user, err := GetRow[DBUser](
 		`UPDATE users
-	 	 SET display_name = $2
-	     WHERE id = $1
-	     RETURNING *`,
+		SET display_name = $2
+		WHERE id = $1
+	    RETURNING *`,
 		user.Id, user.DisplayName)
 	if err != nil {
 		logger.Error("error updating user: %v", err)

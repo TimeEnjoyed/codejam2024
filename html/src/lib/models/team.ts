@@ -9,17 +9,21 @@ class CodeJamTeam {
     Technologies: string;
     Availability: string;
     Description: string;
+    CreatedOn: Date;
     InviteCode: string;
+    TeamMembers: TeamMember[];
 
     constructor() {
         this.Id = '';
         this.EventId = '';
         this.Name = '';
-        this.Visibility = '';
+        this.Visibility = 'public';
         this.Technologies = '';
         this.Availability = '';
         this.Description = '';
+        this.CreatedOn = new Date;
         this.InviteCode = '';
+        this.TeamMembers = [];
     }
 }
 

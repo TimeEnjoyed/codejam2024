@@ -9,20 +9,19 @@ import Invite from "./lib/pages/Invite.svelte";
 import UserTeams from "./lib/pages/UserTeams.svelte";
 import ProfilePage from "./lib/pages/ProfilePage.svelte";
 import UserList from "./lib/pages/admin/UserList.svelte";
-
+import TeamEdit from "./lib/pages/TeamEdit.svelte";
 
 export default {
     '/': HomePage,
     '/home': HomePage,
-
     '/team': TeamOptions,
-    '/team/:id': MyTeam, // link to one of your teams (sharable)  We get an id here in this route...
+    '/team/:id': MyTeam, // link to one of your teams (sharable) We get an id here in this route...
     '/team/invite/:invitecode': Invite, // sharable
     '/teams': UserTeams, // displays all the user's teams (private)
     '/teams/browse': TeamsBrowse,
     '/teams/create': TeamsCreate,
     '/profile': ProfilePage,
-
+    '/team/edit/:id': TeamEdit,
     '/admin/events': EventList,
     '/admin/event/:id': EventEdit,
     '/admin/users': UserList,

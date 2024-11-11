@@ -10,7 +10,7 @@
 	function setActiveContent(content: string) {
 		activeContent.set(content);
 		console.log(activeContent);
-		if (loggedIn) {
+		if ($loggedInStore) {
 			document.getElementById(content)?.classList.add('card-module');
 		}
 	}
