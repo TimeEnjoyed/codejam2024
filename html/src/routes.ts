@@ -14,7 +14,6 @@ import TeamEdit from "./lib/pages/TeamEdit.svelte";
 export default {
     '/': HomePage,
     '/home': HomePage,
-
     '/team': TeamOptions,
     '/team/:id': MyTeam, // link to one of your teams (sharable) We get an id here in this route...
     '/team/invite/:invitecode': Invite, // sharable
